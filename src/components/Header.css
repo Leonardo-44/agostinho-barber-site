@@ -1,0 +1,131 @@
+.header {
+    background-color: var(--bg-header);
+    height: 75px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-bottom: 1px solid #fff;
+    position: fixed;
+    z-index: 999;
+}
+
+.container-header {
+    max-width: 1250px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+    margin: 0 auto;
+}
+
+.gap16 > h4 {
+    font-weight: 400;
+}
+
+.fundo-logo{
+    width: 45px;
+    height: 45px;
+    border-radius: 5px;
+    background-color: #FF9D00;
+}
+
+/* Menu Hambúrguer - Escondido no desktop */
+.hamburger-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 0.5rem;
+  z-index: 1001;
+}
+
+.hamburger-btn:hover {
+  color: #d4a574;
+}
+
+/* RESPONSIVO - A partir de 768px */
+@media (max-width: 768px) {
+  .hamburger-btn {
+    display: flex;
+    align-items: center;
+  }
+
+  .nav-menu {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 70%;
+    max-width: 300px;
+    height: 100vh;
+    background-color: #1a1a1a;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 6rem 2rem 2rem;
+    transition: right 0.3s ease-in-out;
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.3);
+  }
+
+  .nav-menu.active {
+    right: 0;
+  }
+
+  .nav-menu ul {
+    flex-direction: column;
+    width: 100%;
+    gap: 1.5rem;
+  }
+
+  .nav-menu li {
+    display: block;
+    width: 100%;
+  }
+
+  .nav-menu a {
+    display: block;
+    padding: 0.5rem 0;
+    font-size: 1.1rem;
+  }
+
+  .btn-group {
+    flex-direction: column;
+    width: 100%;
+    margin-top: 2rem;
+  }
+
+  .container-header {
+    padding: 0 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  h4 {
+    font-size: 1rem;
+  }
+
+  .fundo-logo {
+    width: 35px;
+    height: 35px;
+  }
+
+  .nav-menu {
+    width: 80%;
+  }
+}
+
+@media (max-width: 260px) {
+  h4 {
+    font-size: 0.8rem;
+  }
+
+  .fundo-logo {
+    width: 35px;
+    height: 35px;
+  }
+
+  .nav-menu {
+    width: 80%;
+  }
+}

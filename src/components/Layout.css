@@ -1,0 +1,271 @@
+/*APRESENTATION*/
+
+.fundo-apresentation {
+  background: linear-gradient(rgb(0, 0, 0, 0.6)), url(../../public/fundo.svg);
+  background-size: cover;
+  background-position: center;
+  position: static;
+  height: 100vh;
+  padding: 75px 25px 0;
+}
+
+.fundo-apresentation > h1 {
+  font-size: 86px;
+}
+
+.fundo-apresentation > p {
+  color: var(--text-gray);
+  text-align: center;
+  font-size: 18px;
+}
+
+.gap32 > button {
+  margin: 24px 0 0 0;
+}
+
+/*DIFERENCIAIS*/
+
+.fundo-diferenciais {
+  height: 264px;
+  background-color: var(--bg-diferenciais);
+}
+
+.fundo-logo-diferenciais {
+  width: 38px;
+  height: 38px;
+  background-color: #ff9d00;
+  border-radius: 5px;
+}
+
+.card-diferenciais > div > div > p {
+  font-size: 12px;
+  color: var(--text-gray);
+}
+
+.card-diferenciais > div > div > h4 {
+  margin: 4px 0;
+}
+
+/*CONTATO*/
+.fundo-contato{
+  height: 385px;
+  background-color: var(--bg-contato);
+  margin: 0 auto;
+}
+
+.fundo-contato > div > div > h2{
+  font-size: 32px;
+  font-weight: 500;
+}
+
+.fundo-contato > div > div > p {
+  color: var(--text-gray);
+  font-size: 12px;
+}
+
+.fundo-logo-contato {
+  width: 38px;
+  height: 38px;
+  background-color: #ff9d00;
+  border-radius: 5px;
+}
+
+.fundo-logo-redes {
+  width: 38px;
+  height: 38px;
+  background-color: #f5c263;
+  border-radius: 5px;
+}
+
+.card-contato > div > div > h4{
+  font-weight: 500;
+}
+
+.card-contato > div > p{
+  color: var(--text-gray);
+  font-size: 13px;
+}
+
+.margin-h2 {
+  padding: 16px 0 36px 0 ;
+}
+
+/*RESPONSIVIDADE*/
+@media (max-width: 1058px) {
+  .card-diferenciais {
+    width: 238px;
+    height: 148px;
+    padding: 0.8rem;
+  }
+
+  .fundo-contato{
+    height: 55vh;
+  }
+
+  .container-contato {
+    display: grid;
+    width: 0;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .fundo-apresentation > h1 {
+    font-size: 70px;
+  }
+
+  .fundo-apresentation > p {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 834px) {
+    .card-diferenciais {
+    width: 148px;
+    height: 118px;
+    padding: 0.8rem;
+  }
+
+  .fundo-logo-diferenciais, .fundo-logo-contato{
+    width: 28px;
+    height: 28px;
+  }
+
+  .fundo-logo-diferenciais > img, .fundo-logo-contato > img{
+    width: 18px;
+  }
+
+  .fundo-logo-redes{
+    width: 28px;
+    height: 28px;
+  }
+
+  .fundo-logo-redes> a > img{
+    width: 22px;
+  }
+
+  .card-contato{
+    width: 200px;
+    height: 118px;
+  }
+
+  .card-contato > div > p{
+  font-size: 11px;
+}
+
+  .card-diferenciais > div > div > h4 {
+  font-size: 9px;
+  }
+
+  .card-diferenciais > div > div > p {
+  font-size: 6px;
+}
+
+}
+
+@media (max-width: 768px) {
+  .fundo-apresentation > h1 {
+    font-size: 54px;
+  }
+
+  .fundo-apresentation > p {
+    font-size: 12px;
+  }
+
+  #agenda {
+    width: 20px;
+  }
+
+  .fundo-diferenciais > .container{
+    padding: 0 1rem;
+  }
+}
+
+@media (max-width: 540px) {
+  .fundo-apresentation > h1 {
+    font-size: 36px;
+  }
+
+  .fundo-apresentation > p {
+    font-size: 10px;
+  }
+
+  .fundo-diferenciais {
+    height: 60vh;
+  }
+
+  .fundo-diferenciais > .container{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .fundo-contato{
+    height: 82vh;
+  }
+
+  .container-contato {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .card-contato{
+    width: 148px;
+    height: 118px;
+    padding: 0.8rem;
+  }
+
+  .card-contato > div > p {
+    font-size: 8px;
+  }
+
+  .card-contato > div > div > h4 {
+  font-size: 10px;
+
+}
+}
+@media (max-width: 380px) {
+  .fundo-apresentation > h1 {
+    font-size: 28px;
+  }
+
+  .fundo-apresentation > p {
+    font-size: 8px;
+  }
+
+  #btnApres1,
+  #btnApres2 {
+    padding: 3px 5px;
+    font-size: 8px;
+  }
+
+  #agenda {
+    width: 16px;
+  }
+}
+
+@media (max-width: 268px) {
+  .fundo-apresentation > h1 {
+    font-size: 20px;
+  }
+
+  .fundo-apresentation > p {
+    font-size: 7px;
+  }
+
+  #btnApres1,
+  #btnApres2 {
+    padding: 2.5px 4.5px;
+    font-size: 8px;
+  }
+
+  #agenda {
+    width: 16px;
+  }
+}

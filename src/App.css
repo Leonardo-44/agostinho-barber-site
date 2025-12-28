@@ -1,0 +1,168 @@
+/* src/App.css */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+:root {
+  --primary-color: #d98e04; /* O laranja/dourado da imagem */
+  --primary-hover: #b57603;
+  --bg-header: #3D2A18;
+  --bg-btnprimary: #D28517;
+  --bg-btnsecondary: #6C3807;
+  --bg-diferenciais: #312A23;
+  --bg-contato: #2f1b00;
+  --bg-light-dark: #2d2d2d;
+  --text-light: #f0f0f0;
+  --text-gray: #cccccc;
+
+  --bg-dark: #1e1b18;      /* Fundo muito escuro (quase preto) */
+  --card-bg: #2e241e;      /* Marrom café (fundo dos cards na imagem) */
+  --primary: #f0a500;      /* Laranja/Dourado característico */
+  --primary-hover: #d18e00;
+  --text-white: #ffffff;
+  --text-gray: #a8a8a8;
+  --input-bg: #1a1512;
+  --border-color: #4a3b32;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+ font-family: "Poppins", sans-serif;
+}
+
+body {
+  background-color: var(--bg-light-dark);
+  color: #fff;
+  line-height: 1.6;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+ul {
+  list-style: none;
+  cursor: pointer;
+}
+
+li:hover{
+  color: var(--primary-color);
+}
+
+.jc-center{
+  justify-content: center;
+}
+
+.d-flex{
+  display: flex;
+}
+
+.alg-center{
+  align-items: center;
+}
+
+.jc-between{
+  justify-content: space-between;
+}
+
+.jc-around{
+  justify-content: space-around;
+}
+
+.fd-column{
+  flex-direction: column;
+}
+
+.txt-left{
+  text-align: left;
+}
+
+.container {
+  width: 100%;
+  max-width: 1250px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.destaque{
+  color: #FF9D00;
+}
+
+.gap8{
+  gap: 8px;
+}
+
+.gap16{
+  gap: 16px;
+}
+
+.gap32{
+  gap: 32px;
+}
+
+.btn{
+  border: none;
+  padding: 5px 15px;
+  cursor: pointer;
+  transition: 0.2s ease;
+  border-radius: 8px;
+  color: var(--text-light);
+  font-weight: 500;
+}
+
+.btn:hover{
+  filter: brightness(0.8);
+}
+
+.btn-primary{
+  background-color: var(--bg-btnprimary);
+}
+
+.btn-secondary{
+  background-color: var(--bg-btnsecondary);
+}
+
+/*CARD DIFERENCIAIS*/
+
+.card-diferenciais{
+  width: 308px;
+  height: 178px;
+  background-color: var(--bg-header);
+  border-radius: 10px;
+  border: 1px #ff9600 solid;
+  padding: 1.2rem;
+}
+
+/*CARD CONTATO*/
+
+.card-contato {
+  height: 144px;
+  width: 228px;
+  background-color: var(--bg-header);
+  border-radius: 10px;
+  border: 1px #ff9600 solid;
+  padding: 1rem;
+}
+
+/*ESQUECI SENHA*/
+
+.success-message {
+    background-color: #3b2f29; /* Marrom levemente mais claro que o card */
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 5px solid var(--primary); /* Borda laranja para destaque */
+    color: var(--text-white);
+    text-align: left;
+    margin-bottom: 1.5rem;
+}
+
+.success-message p {
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+    color: var(--text-gray);
+} 
