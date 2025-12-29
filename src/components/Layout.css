@@ -204,7 +204,7 @@
   }
 
   .fundo-contato{
-    height: 90vh;
+    height: 82vh;
   }
 
   .container-contato {
@@ -237,6 +237,10 @@
 
   .fundo-apresentation > p {
     font-size: 8px;
+  }
+
+  .fundo-contato{
+    height: 90vh;
   }
 
   #btnApres1,
