@@ -54,6 +54,9 @@ const Header = () => {
             <button onClick={() => handleNavigation('/cadastro')} className="btn btn-secondary">
               Cadastre-se
             </button>
+            <button onClick={() => handleNavigation('/painel')} className="btn btn-secondary">
+              Ver horários
+            </button>
           </div>
         </nav>
       </div>

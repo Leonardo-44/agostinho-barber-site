@@ -7,6 +7,7 @@ import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import Agendamento from './pages/Agendamento.jsx';
 import EsqueciSenha from "./pages/EsqueciSenha.jsx";
+import PainelBarbeiro from './pages/PainelBarbeiro.jsx';
 
 
 function App() {
@@ -20,7 +21,8 @@ function App() {
         <Route path="/cadastro" element={<Register />} />
         <Route path="/agendamento" element={<Agendamento/>} />
         <Route path="/esqueci-senha" element={<EsqueciSenha/>} />
-      </Routes>
+        <Route path="painel" element={<PainelBarbeiro/>} />
+      </Routes> 
     </BrowserRouter>
     
     </>

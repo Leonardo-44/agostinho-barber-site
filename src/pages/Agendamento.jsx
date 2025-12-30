@@ -1,14 +1,12 @@
 import React from "react";
-import { useNavigate } from 'react-router-dom';
+import FormAgendamento from "../components/FormAgendamento.jsx"
 
 const  Agendamento= () => {
 
-  const navigate = useNavigate();
   return (
   
     <div>
-        AGENDAMENTO
-        <button className="btn btn-primary" onClick={() => navigate('/')}>VOLTAR</button>
+        <FormAgendamento/>   
     </div>
   );
 };
