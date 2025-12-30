@@ -99,7 +99,8 @@
   }
 
   .fundo-contato{
-    height: 55vh;
+    height: auto;
+    padding: 0 0 2em 0;
   }
 
   .container-contato {
@@ -203,10 +204,6 @@
     gap: 16px;
   }
 
-  .fundo-contato{
-    height: 82vh;
-  }
-
   .container-contato {
     display: flex;
     flex-direction: column;
@@ -237,10 +234,6 @@
 
   .fundo-apresentation > p {
     font-size: 8px;
-  }
-
-  .fundo-contato{
-    height: 90vh;
   }
 
   #btnApres1,

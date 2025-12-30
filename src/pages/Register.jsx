@@ -4,25 +4,21 @@ import { registerClient } from "../services/api";
 import "./Login.css";
 
 const Register = () => {
-  // ✅ CORREÇÃO 1: navigate deve vir ANTES de ser usado
   const navigate = useNavigate();
 
-  // Estados para os campos do formulário
   const [formData, setFormData] = useState({
-    nome: '',
-    telefone: '',
-    email: '',
-    senha: '',
-    confirmarSenha: ''
+    nome: "",
+    sobrenome: "",
+    whatsapp: "",
+    email: "",
+    senha: "",
+    confirmarSenha: "",
   });
-    
+
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-    
-  // Estado para controlar a visibilidade da senha
-  const [mostrarSenha, setMostrarSenha] = useState(false);
-  const [mostrarConfirmarSenha, setMostrarConfirmarSenha] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
@@ -30,16 +26,14 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSuccess('');
-    setError('');
-    
-    // ✅ CORREÇÃO 2: Validação de senhas melhorada
+    setError("");
+    setSuccess("");
+
     if (formData.senha !== formData.confirmarSenha) {
       setError("As senhas não coincidem!");
       return;
     }
 
-    // ✅ CORREÇÃO 3: Validação de senha forte (opcional)
     if (formData.senha.length < 6) {
       setError("A senha deve ter pelo menos 6 caracteres!");
       return;
@@ -48,118 +42,96 @@ const Register = () => {
     setLoading(true);
 
     try {
-        const dataToSubmit = {
-            nome: formData.nome,
-            telefone: formData.telefone,
-            email: formData.email,
-            senha: formData.senha,
-        };
+      await registerClient({
+        nome: formData.nome,
+        sobrenome: formData.sobrenome,
+        telefone: formData.whatsapp,
+        email: formData.email,
+        senha: formData.senha,
+      });
 
-        await registerClient(dataToSubmit);
+      setSuccess(`✅ Cadastro de ${formData.nome} realizado!`);
 
-        setSuccess(`✅ Cadastro de ${formData.nome} realizado! Redirecionando para login...`);
-        
-        // Limpar formulário
-        setFormData({ nome: '', telefone: '', email: '', senha: '', confirmarSenha: '' });
-        
-        // Redireciona para o login após 2 segundos
-        setTimeout(() => {
-            navigate('/login');
-        }, 2000);
-        
+      setFormData({
+        nome: "",
+        sobrenome: "",
+        whatsapp: "",
+        email: "",
+        senha: "",
+        confirmarSenha: "",
+      });
+
+      setTimeout(() => navigate("/login"), 2000);
     } catch (err) {
-        // ✅ CORREÇÃO 4: Tratamento de erro mais robusto
-        const errorMessage = err?.response?.data?.error || err?.message || 'Erro ao cadastrar. Tente novamente.';
-        setError(`❌ ${errorMessage}`);
-        console.error("Erro de Cadastro:", err);
+      setError("❌ Erro ao cadastrar. Tente novamente.");
+      console.error(err);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 
   return (
     <div className="login-container">
       <div className="login-card cadastro-card">
-        
         <div className="login-header">
           <div className="logo-icon">✂️</div>
-          <h1>Crie sua <span>Conta</span></h1>
-          <p>Junte-se ao Agostinho Barber</p>
+          <h1>
+            Criar <span>Conta</span>
+          </h1>
+          <p>Agostinho Barber</p>
         </div>
-
         <form onSubmit={handleSubmit} className="login-form">
-            {/* ✅ CORREÇÃO 5: Mensagens com melhor acessibilidade */}
-            {success && (
-              <div style={{ 
-                color: '#22c55e', 
-                backgroundColor: '#dcfce7', 
-                padding: '12px', 
-                borderRadius: '8px',
-                textAlign: 'center',
-                marginBottom: '16px'
-              }}>
-                {success}
-              </div>
-            )}
-            {error && (
-              <div style={{ 
-                color: '#ef4444', 
-                backgroundColor: '#fee2e2', 
-                padding: '12px', 
-                borderRadius: '8px',
-                textAlign: 'center',
-                marginBottom: '16px'
-              }}>
-                {error}
-              </div>
-            )}
-          
+          {success && <p className="success-msg">{success}</p>}
+          {error && <p className="error-msg">{error}</p>}
+
           <div className="input-group">
-            <label htmlFor="nome">Nome Completo</label>
+            <label htmlFor="nome">Nome</label>
             <input
-              type="text"
               id="nome"
-              placeholder="Ex: João da Silva"
               value={formData.nome}
               onChange={handleChange}
               required
-              disabled={loading}
             />
           </div>
 
           <div className="input-group">
-            <label htmlFor="telefone">Telefone</label>
+            <label htmlFor="sobrenome">Sobrenome</label>
             <input
-              type="tel"
-              id="telefone"
-              placeholder="(00) 00000-0000"
-              value={formData.telefone}
+              id="sobrenome"
+              value={formData.sobrenome}
               onChange={handleChange}
               required
-              disabled={loading}
+            />
+          </div>
+
+          <div className="input-group">
+            <label htmlFor="whatsapp">WhatsApp</label>
+            <input
+              id="whatsapp"
+              value={formData.whatsapp}
+              onChange={handleChange}
+              required
             />
           </div>
 
           <div className="input-group">
             <label htmlFor="email">Email</label>
             <input
-              type="email"
               id="email"
-              placeholder="exemplo@email.com"
+              type="email"
               value={formData.email}
               onChange={handleChange}
               required
-              disabled={loading}
             />
           </div>
 
-          <div className="input-group password-group">
+          <div className="input-group">
             <label htmlFor="senha">Senha</label>
             <div style={{ position: "relative" }}>
               <input
-                type={mostrarSenha ? "text" : "password"}
+                type={showPassword ? "text" : "password"}
                 id="senha"
-                placeholder="Crie uma senha forte (mín. 6 caracteres)"
+                placeholder="Sua senha"
                 value={formData.senha}
                 onChange={handleChange}
                 required
@@ -168,7 +140,7 @@ const Register = () => {
               />
               <button
                 type="button"
-                onClick={() => setMostrarSenha(!mostrarSenha)}
+                onClick={() => setShowPassword(!showPassword)}
                 disabled={loading}
                 style={{
                   position: "absolute",
@@ -180,29 +152,30 @@ const Register = () => {
                   cursor: loading ? "not-allowed" : "pointer",
                   fontSize: "18px",
                 }}
-                aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
+                aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
               >
-                {mostrarSenha ? "🙈" : "👁️"}
+                {showPassword ? "🙈" : "👁️"}
               </button>
             </div>
           </div>
 
-          <div className="input-group password-group">
-            <label htmlFor="confirmarSenha">Confirmar Senha</label>
+          <div className="input-group">
+            <label htmlFor="confirmarSenha">Confirme a senha</label>
             <div style={{ position: "relative" }}>
               <input
-                type={mostrarConfirmarSenha ? "text" : "password"}
+                type={showPassword ? "text" : "password"}
                 id="confirmarSenha"
-                placeholder="Repita a senha"
+                placeholder="Confirme sua senha"
                 value={formData.confirmarSenha}
                 onChange={handleChange}
                 required
                 disabled={loading}
                 style={{ paddingRight: "40px" }}
               />
+
               <button
                 type="button"
-                onClick={() => setMostrarConfirmarSenha(!mostrarConfirmarSenha)}
+                onClick={() => setShowPassword(!showPassword)}
                 disabled={loading}
                 style={{
                   position: "absolute",
@@ -214,27 +187,33 @@ const Register = () => {
                   cursor: loading ? "not-allowed" : "pointer",
                   fontSize: "18px",
                 }}
-                aria-label={mostrarConfirmarSenha ? "Ocultar senha" : "Mostrar senha"}
+                aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
               >
-                {mostrarConfirmarSenha ? "🙈" : "👁️"}
+                {showPassword ? "🙈" : "👁️"}
               </button>
             </div>
           </div>
 
-          <button type="submit" className="btn-login" disabled={loading}>
-            {loading ? 'Cadastrando...' : 'Cadastrar'}
+          <button className="btn btn-primary" type="submit" disabled={loading}>
+            {loading ? "Cadastrando..." : "Cadastrar"}
           </button>
         </form>
-
         <div className="login-footer">
-          <p>Já tem uma conta? <a href="/login" className="highlight-link">Fazer Login</a></p>
-        </div>
-        <button 
-          onClick={() => navigate('/')} 
+          {" "}
+          <p>
+            Já tem uma conta?{" "}
+            <a href="/login" className="highlight-link">
+              Fazer Login
+            </a>
+          </p>{" "}
+        </div>{" "}
+        <button
+          onClick={() => navigate("/")}
           className="btn btn-secondary"
           disabled={loading}
         >
-          Voltar
+          {" "}
+          Voltar{" "}
         </button>
       </div>
     </div>
