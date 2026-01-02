@@ -3,16 +3,16 @@ import "./Layout.css";
 import { useNavigate } from "react-router-dom";
 
 //ASSETS
-import Agenda from "../assets/agenda.svg";
-import Relogio from "../assets/relogio.svg";
-import Medalha from "../assets/medalha.svg";
-import Endereco from "../assets/endereco.svg";
-import Telefone from "../assets/telefone.svg";
-import RedesSociais from "../assets/redesSociais.svg";
+import Agenda from "../../assets/agenda.svg";
+import Relogio from "../../assets/relogio.svg";
+import Medalha from "../../assets/medalha.svg";
+import Endereco from "../../assets/endereco.svg";
+import Telefone from "../../assets/telefone.svg";
+import RedesSociais from "../../assets/redesSociais.svg";
 
-import Instagram from "../assets/Redes Sociais/instagram.svg";
-import Whatsapp from "../assets/Redes Sociais/whatsapp.svg";
-import Youtube from "../assets/Redes Sociais/youtube.svg";
+import Instagram from "../../assets/Redes Sociais/instagram.svg";
+import Whatsapp from "../../assets/Redes Sociais/whatsapp.svg";
+import Youtube from "../../assets/Redes Sociais/youtube.svg";
 
 const Layout = () => {
   const navigate = useNavigate();

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 
 // ASSETS
-import Tesoura from "../assets/tesoura.svg";
+import Tesoura from "../../assets/tesoura.svg";
 
 const Header = () => {
   const navigate = useNavigate();

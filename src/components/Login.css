@@ -32,7 +32,7 @@
 /* O cartão central de login */
 .login-card {
   background-color: var(--card-bg);
-  padding: 2.5rem;
+  padding: 1.5rem;
   border-radius: 12px;
   width: 100%;
   max-width: 400px;
@@ -121,7 +121,7 @@
 
 /* Links do rodapé */
 .login-footer {
-  margin-top: 1.5rem;
+  margin: 1.5rem 0;
   font-size: 0.85rem;
   color: var(--text-gray);
 }
@@ -211,7 +211,7 @@
 
   .login-footer {
     font-size: 13px;
-    margin-top: 20px;
+    margin: 20px 0px;
   }
 
   .login-form {

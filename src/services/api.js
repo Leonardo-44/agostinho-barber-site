@@ -2,7 +2,7 @@
 
 const API_URL = 'http://localhost:3000/api';
 
-// ==================== CLIENTES ====================
+// ==================== CLIENTES ==================== //
 
 export const registerClient = async (data) => {
     try {
@@ -67,7 +67,7 @@ export const getClients = async () => {
     }
 };
 
-// ==================== AGENDAMENTOS ====================
+// ==================== AGENDAMENTOS ==================== //
 
 export const createAppointment = async (data) => {
     try {
@@ -134,7 +134,7 @@ export const deleteAppointment = async (id) => {
     }
 };
 
-// ==================== SERVIÇOS ====================
+// ==================== SERVIÇOS ==================== //
 
 export const getServices = async () => {
     try {
@@ -145,6 +145,62 @@ export const getServices = async () => {
         return await response.json(); 
     } catch (error) {
         console.error('Erro:', error);
+        throw error;
+    }
+};
+
+// ==================== CLIENTES (VALIDAÇÃO) ==================== //
+
+export const verifyCode = async (email, code) => {
+    try {
+        // Tenta pegar o token armazenado
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+
+        const response = await fetch(`${API_URL}/clientes/verify`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token && { 'Authorization': `Bearer ${token}` }) // Adiciona token se existir
+            },
+            body: JSON.stringify({ email, code }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw {
+                error: result.error || 'Erro ao validar o código',
+                status: response.status
+            };
+        }
+        return result;
+    } catch (error) {
+        console.error('Erro ao verificar código:', error);
+        throw error;
+    }
+};
+
+export const resendVerification = async (email) => {
+    try {
+        const response = await fetch(`${API_URL}/clientes/resend-verification`, { // ⬅️ ROTA DO BACK-END
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email }), // ⬅️ Envia apenas o email
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw {
+                error: result.error || 'Erro ao reenviar código',
+                status: response.status
+            };
+        }
+        return result;
+    } catch (error) {
+        console.error('Erro ao reenviar código:', error);
         throw error;
     }
 };

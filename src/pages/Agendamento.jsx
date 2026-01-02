@@ -1,7 +1,6 @@
-import React from "react";
-import FormAgendamento from "../components/FormAgendamento.jsx"
+import FormAgendamento from "../components/FormAgendamento/FormAgendamento.jsx";
 
-const  Agendamento= () => {
+const Agendamento = () => {
 
   return (
   

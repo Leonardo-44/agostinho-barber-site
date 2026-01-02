@@ -115,7 +115,6 @@ const FormAgendamento = () => {
 
   const handleSubmit = () => {
     if (
-      !formData.nome ||
       !formData.data ||
       !formData.horario ||
       !formData.servico
@@ -126,7 +125,6 @@ const FormAgendamento = () => {
     setSubmitted(true);
     setTimeout(() => {
       setFormData({
-        nome: "",
         data: "",
         horario: "",
         servico: "",
@@ -170,17 +168,6 @@ const FormAgendamento = () => {
           </div>
         ) : (
           <div className="form-content">
-            <div className="form-group">
-              <label className="form-label">Nome *</label>
-              <input
-                type="text"
-                name="nome"
-                value={formData.nome}
-                onChange={handleInputChange}
-                placeholder="Seu nome completo"
-                className="form-input"
-              />
-            </div>
 
             <div className="form-group">
               <label className="form-label">

@@ -1,7 +1,6 @@
-import React from "react";
-import Header from "../components/Header.jsx";
-import Layout from "../components/Layout.jsx";
-import Footer from "../components/Footer.jsx";
+import Header from "../components/Header/Header.jsx";
+import Layout from "../components/Layout/Layout.jsx";
+import Footer from "../components/Footer/Footer.jsx";
 
 const LandingPage = () => {
   return (

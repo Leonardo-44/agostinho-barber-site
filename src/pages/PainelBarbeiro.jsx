@@ -1,11 +1,8 @@
-// src/pages/PainelBarbeiro.jsx
-
-import React from 'react';
-import BarberDashboard from '../components/BarberDashboard'; 
+import BarberDashboard from '../components/BarberDashboard/BarberDashboard.jsx'; 
 
 const PainelBarbeiro = () => {
   return (
-    // Usa a classe CSS para garantir o fundo escuro
+    
     <div className="body-dark">
       <BarberDashboard />
     </div>

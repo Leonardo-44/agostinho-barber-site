@@ -1,13 +1,12 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import './App.css';
-import Header from "./components/Header";
-import Layout from "./components/Layout";
 import LandingPage from "./pages/LandingPage.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import Agendamento from './pages/Agendamento.jsx';
 import EsqueciSenha from "./pages/EsqueciSenha.jsx";
 import PainelBarbeiro from './pages/PainelBarbeiro.jsx';
+import ValidacaoEmail from "./pages/ValidacaoEmail.jsx";
 
 
 function App() {
@@ -21,7 +20,8 @@ function App() {
         <Route path="/cadastro" element={<Register />} />
         <Route path="/agendamento" element={<Agendamento/>} />
         <Route path="/esqueci-senha" element={<EsqueciSenha/>} />
-        <Route path="painel" element={<PainelBarbeiro/>} />
+        <Route path="/painel" element={<PainelBarbeiro/>} />
+        <Route path="/validacao-email" element={<ValidacaoEmail/>} />
       </Routes> 
     </BrowserRouter>
     

@@ -2,7 +2,7 @@ import React from "react";
 import "./Footer.css";
 
 // ASSETS
-import Tesoura from "../assets/tesoura.svg";
+import Tesoura from "../../assets/tesoura.svg";
 
 const Footer = () => {
 
