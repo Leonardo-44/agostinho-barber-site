@@ -1,206 +1,128 @@
-// src/api/index.js (ou api.js)
+// src/services/api.js (ou index.js)
 
 const API_URL = 'http://localhost:3000/api';
+
+// ==================== FUNÇÃO AUXILIAR CENTRALIZADA ==================== //
+
+/**
+ * Função utilitária para fazer chamadas à API com tratamento de erro consistente.
+ * @param {string} endpoint - O caminho da rota (ex: 'clientes', 'whatsapp/verify-code').
+ * @param {object} data - O corpo da requisição JSON (opcional, para POST/PUT/PATCH).
+ * @param {string} method - Método HTTP (GET, POST, PUT, DELETE).
+ * @returns {Promise<object>} O resultado JSON da API.
+ */
+const apiCall = async (endpoint, data = null, method = 'GET') => {
+    
+    // Tenta pegar o token para usar em chamadas autenticadas
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+
+    const headers = {
+        'Content-Type': 'application/json',
+        // Adiciona Authorization se o token estiver presente
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+    };
+    
+    // Configuração da requisição
+    const config = {
+        method: method,
+        headers: headers,
+        // Adiciona body apenas se o método for POST, PUT ou PATCH
+        ...(data && (method === 'POST' || method === 'PUT' || method === 'PATCH') && { body: JSON.stringify(data) })
+    };
+
+    try {
+        const response = await fetch(`${API_URL}/${endpoint}`, config);
+        const result = await response.json();
+
+        if (!response.ok) {
+            // Garante que o erro retorne a mensagem do backend e o status
+            throw {
+                error: result.error || result.message || `Erro ao processar ${endpoint}`,
+                status: response.status,
+            }; 
+        }
+
+        return result;
+
+    } catch (error) {
+        console.error(`API Error em ${endpoint}:`, error);
+        // Propaga o erro
+        throw error; 
+    }
+};
 
 // ==================== CLIENTES ==================== //
 
 export const registerClient = async (data) => {
-    try {
-        const response = await fetch(`${API_URL}/clientes`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data),
-        });
-
-        const result = await response.json();
-
-        if (!response.ok) {
-            throw {
-                error: result.error || result.message || 'Erro ao cadastrar cliente',
-                status: response.status
-            };
-        }
-
-        return result;
-    } catch (error) {
-        console.error('Erro ao registrar cliente:', error);
-        throw error;
-    }
+    return apiCall('clientes', data, 'POST');
 };
 
 export const loginClient = async (email, senha) => {
-    try {
-        const response = await fetch(`${API_URL}/clientes/login`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email, senha }),
-        });
-
-        const result = await response.json();
-
-        if (!response.ok) {
-            throw {
-                error: result.error || 'Erro ao fazer login',
-                status: response.status
-            };
-        }
-
-        return result;
-    } catch (error) {
-        console.error('Erro ao fazer login:', error);
-        throw error;
-    }
+    return apiCall('clientes/login', { email, senha }, 'POST');
 };
 
 export const getClients = async () => {
-    try {
-        const response = await fetch(`${API_URL}/clientes`);
-        if (!response.ok) throw new Error('Erro ao buscar clientes');
-        return await response.json();
-    } catch (error) {
-        console.error('Erro:', error);
-        throw error;
-    }
+    return apiCall('clientes', null, 'GET');
 };
 
 // ==================== AGENDAMENTOS ==================== //
 
 export const createAppointment = async (data) => {
-    try {
-        const response = await fetch(`${API_URL}/agendamentos`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data),
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Erro ao criar agendamento');
-        }
-
-        return await response.json();
-    } catch (error) {
-        console.error('Erro:', error);
-        throw error;
-    }
+    return apiCall('agendamentos', data, 'POST');
 };
 
 export const getAppointments = async () => {
-    try {
-        const response = await fetch(`${API_URL}/agendamentos`);
-        if (!response.ok) throw new Error('Erro ao buscar agendamentos');
-        return await response.json();
-    } catch (error) {
-        console.error('Erro:', error);
-        throw error;
-    }
+    return apiCall('agendamentos', null, 'GET');
 };
 
 export const updateAppointment = async (id, data) => {
-    try {
-        const response = await fetch(`${API_URL}/agendamentos/${id}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data),
-        });
-
-        if (!response.ok) throw new Error('Erro ao atualizar agendamento');
-        return await response.json();
-    } catch (error) {
-        console.error('Erro:', error);
-        throw error;
-    }
+    return apiCall(`agendamentos/${id}`, data, 'PUT');
 };
 
 export const deleteAppointment = async (id) => {
-    try {
-        const response = await fetch(`${API_URL}/agendamentos/${id}`, {
-            method: 'DELETE',
-        });
-
-        if (!response.ok) throw new Error('Erro ao deletar agendamento');
-        return await response.json();
-    } catch (error) {
-        console.error('Erro:', error);
-        throw error;
-    }
+    // Passa null para data (sem body)
+    return apiCall(`agendamentos/${id}`, null, 'DELETE');
 };
 
 // ==================== SERVIÇOS ==================== //
 
 export const getServices = async () => {
-    try {
-        // A chave aqui é buscar TUDO
-        const response = await fetch(`${API_URL}/servicos`);
-        if (!response.ok) throw new Error('Erro ao buscar serviços');
-        // Retornamos todos os serviços/adicionais
-        return await response.json(); 
-    } catch (error) {
-        console.error('Erro:', error);
-        throw error;
-    }
+    return apiCall('servicos', null, 'GET');
 };
 
-// ==================== CLIENTES (VALIDAÇÃO) ==================== //
+
+// ==================== CLIENTES (VALIDAÇÃO E-MAIL) ==================== //
 
 export const verifyCode = async (email, code) => {
-    try {
-        // Tenta pegar o token armazenado
-        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-
-        const response = await fetch(`${API_URL}/clientes/verify`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                ...(token && { 'Authorization': `Bearer ${token}` }) // Adiciona token se existir
-            },
-            body: JSON.stringify({ email, code }),
-        });
-
-        const result = await response.json();
-
-        if (!response.ok) {
-            throw {
-                error: result.error || 'Erro ao validar o código',
-                status: response.status
-            };
-        }
-        return result;
-    } catch (error) {
-        console.error('Erro ao verificar código:', error);
-        throw error;
-    }
+    // Esta função usará o token de login para autenticação se ele existir
+    return apiCall('clientes/verify', { email, code }, 'POST');
 };
 
 export const resendVerification = async (email) => {
-    try {
-        const response = await fetch(`${API_URL}/clientes/resend-verification`, { // ⬅️ ROTA DO BACK-END
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email }), // ⬅️ Envia apenas o email
-        });
+    return apiCall('clientes/resend-verification', { email }, 'POST');
+};
 
-        const result = await response.json();
+// ==================== CLIENTES (VALIDAÇÃO WHATSAPP) ==================== //
 
-        if (!response.ok) {
-            throw {
-                error: result.error || 'Erro ao reenviar código',
-                status: response.status
-            };
-        }
-        return result;
-    } catch (error) {
-        console.error('Erro ao reenviar código:', error);
-        throw error;
-    }
+/**
+ * 1. 💬 Função para VALIDAR o código recebido (Verifica o código Twilio).
+ * @param {string} whatsappNumber - O número no formato +55DDDNUMERO.
+ * @param {string} code - O código de 6 dígitos.
+ */
+export const verifyWhatsappCode = async (whatsappNumber, code) => {
+    return apiCall('whatsapp/verify-code', {
+        whatsappNumber,
+        code
+    }, 'POST');
+};
+
+
+/**
+ * 2. 🔁 Função para REENVIAR o código (Solicita um novo código Twilio).
+ * @param {string} whatsappNumber - O número no formato +55DDDNUMERO.
+ */
+export const resendWhatsappCode = async (whatsappNumber) => {
+    return apiCall('whatsapp/resend-code', {
+        whatsappNumber
+    }, 'POST');
 };

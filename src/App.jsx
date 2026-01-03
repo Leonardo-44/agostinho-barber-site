@@ -7,6 +7,7 @@ import Agendamento from './pages/Agendamento.jsx';
 import EsqueciSenha from "./pages/EsqueciSenha.jsx";
 import PainelBarbeiro from './pages/PainelBarbeiro.jsx';
 import ValidacaoEmail from "./pages/ValidacaoEmail.jsx";
+import ValidacaoWhatsapp from "./pages/ValidacaoWhatsapp.jsx";
 
 
 function App() {
@@ -22,6 +23,8 @@ function App() {
         <Route path="/esqueci-senha" element={<EsqueciSenha/>} />
         <Route path="/painel" element={<PainelBarbeiro/>} />
         <Route path="/validacao-email" element={<ValidacaoEmail/>} />
+        <Route path="/validacao-whatsapp" element={<ValidacaoWhatsapp/>} />
+        
       </Routes> 
     </BrowserRouter>
     
