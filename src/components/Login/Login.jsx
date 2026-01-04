@@ -19,30 +19,84 @@ const Login = () => {
     setError("");
     setSuccess("");
     
+    if (!email || !password) {
+      setError("❌ Por favor, preencha todos os campos.");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const response = await loginClient(email, password);
+      console.log('📝 [FORM] Iniciando login para:', email);
       
-      // Salvar token ou dados do usuário no localStorage (se o backend retornar)
+      // ✅ CORRIGIDO: Passar objeto com { email, senha }
+      const response = await loginClient({ 
+        email: email,
+        senha: password  // ⚠️ Backend espera "senha", não "password"
+      });
+      
+      console.log('✅ [LOGIN] Resposta recebida:', response);
+      
+      // Verificar se login foi bem-sucedido
+      if (!response.success) {
+        throw { error: response.error || 'Erro ao fazer login' };
+      }
+
+      // Salvar token no localStorage
       if (response.token) {
         localStorage.setItem('authToken', response.token);
-      }
-      if (response.cliente) {
-        localStorage.setItem('clienteData', JSON.stringify(response.cliente));
+        console.log('💾 Token salvo no localStorage');
       }
       
-      setSuccess(`✅ Bem-vindo de volta, ${response.cliente?.nome || 'usuário'}!`);
+      // Salvar dados do usuário
+      if (response.user) {
+        localStorage.setItem('userData', JSON.stringify(response.user));
+        localStorage.setItem('userEmail', response.user.email);
+        localStorage.setItem('userName', response.user.nome);
+        localStorage.setItem('userRole', response.user.role);
+        console.log('💾 Dados do usuário salvos');
+      }
       
-      // Redirecionar após 1 segundo
+      // Mensagem de sucesso
+      const nomeUsuario = response.user?.nome || 'usuário';
+      setSuccess(`✅ Bem-vindo de volta, ${nomeUsuario}!`);
+      
+      // Redirecionar após 1.5 segundos
       setTimeout(() => {
-        navigate('/'); // ou '/dashboard' dependendo da sua rota
-      }, 1000);
+        const userRole = response.user?.role;
+        
+        // Redirecionar baseado no role
+        if (userRole === 'admin') {
+          navigate('/');
+        } else {
+          navigate('/'); // ou '/cliente/dashboard'
+        }
+      }, 1500);
       
     } catch (err) {
-      const errorMessage = err?.error || err?.message || 'Erro ao fazer login. Verifique suas credenciais.';
+      console.error("❌ Erro de Login:", err);
+      
+      // Extrair mensagem de erro
+      let errorMessage = 'Erro ao fazer login. Verifique suas credenciais.';
+      
+      if (err?.error) {
+        errorMessage = err.error;
+      } else if (err?.message) {
+        errorMessage = err.message;
+      }
+      
+      // Mensagens específicas por status
+      if (err?.status === 401) {
+        errorMessage = 'E-mail ou senha incorretos.';
+      } else if (err?.status === 403) {
+        errorMessage = 'Conta não verificada. Por favor, verifique seu e-mail.';
+      } else if (err?.status === 404) {
+        errorMessage = 'Usuário não encontrado. Você já se cadastrou?';
+      } else if (err?.status === 500) {
+        errorMessage = 'Erro no servidor. Tente novamente em instantes.';
+      }
+      
       setError(`❌ ${errorMessage}`);
-      console.error("Erro de Login:", err);
     } finally {
       setLoading(false);
     }
@@ -68,7 +122,8 @@ const Login = () => {
               padding: '12px', 
               borderRadius: '8px',
               textAlign: 'center',
-              marginBottom: '16px'
+              marginBottom: '16px',
+              fontWeight: '500'
             }}>
               {success}
             </div>
@@ -81,7 +136,8 @@ const Login = () => {
               padding: '12px', 
               borderRadius: '8px',
               textAlign: 'center',
-              marginBottom: '16px'
+              marginBottom: '16px',
+              fontWeight: '500'
             }}>
               {error}
             </div>
@@ -153,6 +209,7 @@ const Login = () => {
           onClick={() => navigate('/')} 
           className="btn btn-secondary"
           disabled={loading}
+          style={{ marginTop: '16px' }}
         >
           Voltar
         </button>

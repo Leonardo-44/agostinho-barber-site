@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import '../Login.css';
 
 // Importa as funções de API para validação de e-mail
-import { verifyCode, resendVerification } from '../../services/api.js'; 
+import { verifyEmailCode, resendEmailCode } from '../../services/api.js';
 
 const ValidacaoEmail = () => {
     const [codigo, setCodigo] = useState('');
@@ -11,47 +11,58 @@ const ValidacaoEmail = () => {
     const [mensagemErro, setMensagemErro] = useState('');
     const [mensagemSucesso, setMensagemSucesso] = useState(false);
     const [mensagemReenvio, setMensagemReenvio] = useState('');
+    const [tempoRestante, setTempoRestante] = useState(0);
     
     const location = useLocation(); 
     const navigate = useNavigate();
 
-    // ➡️ PEGA O EMAIL E O WHATSAPP PASSADOS NA ROTA DE CADASTRO
-    // Aceita tanto 'whatsappNumber' quanto 'whatsapp' para compatibilidade
+    // Pega apenas o e-mail passado na rota de cadastro
     const emailUsuario = location.state?.email;
-    const whatsappUsuario = location.state?.whatsappNumber || location.state?.whatsapp; 
 
-    // Redireciona se não houver email ou whatsapp (proteção de rota)
+    // Contador regressivo para rate limit
     useEffect(() => {
-        // 🚨 DEBUG: Verifica os valores que estão chegando
+        if (tempoRestante > 0) {
+            const timer = setInterval(() => {
+                setTempoRestante(prev => {
+                    if (prev <= 1) {
+                        clearInterval(timer);
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+            
+            return () => clearInterval(timer);
+        }
+    }, [tempoRestante]);
+
+    // Redireciona se não houver email (proteção de rota)
+    useEffect(() => {
         console.log('--- DEBUG ValidacaoEmail ---');
         console.log('E-mail Recebido:', emailUsuario);
-        console.log('WhatsApp Recebido:', whatsappUsuario);
-        console.log('Location State:', location.state);
         console.log('----------------------------');
         
-        // Checa se as informações essenciais foram passadas via state
         if (!emailUsuario) {
             console.warn("Email ausente. Redirecionando para cadastro.");
             alert("Email não foi passado. Você precisa se cadastrar primeiro.");
             navigate('/cadastro', { replace: true });
         }
-    }, [emailUsuario, whatsappUsuario, navigate, location.state]); // Dependências corretas
+    }, [emailUsuario, navigate]);
 
     const handleInputChange = (e) => {
-        // Permite apenas dígitos e limita a 6 caracteres
         const valor = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
         setCodigo(valor);
-        setMensagemErro(''); // Limpa erro ao digitar
+        setMensagemErro('');
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
         if (codigo.length !== 6) {
             setMensagemErro("Por favor, digite o código de 6 dígitos.");
             return;
         }
         
-        // Proteção extra: não tenta validar se as variáveis essenciais sumiram
         if (!emailUsuario) {
              setMensagemErro("Dados de usuário ausentes. Por favor, reinicie o cadastro.");
              return;
@@ -61,27 +72,21 @@ const ValidacaoEmail = () => {
         setMensagemErro('');
 
         try {
-            // 🚀 CHAMADA REAL À API PARA VALIDAR O CÓDIGO
-            const response = await verifyCode(emailUsuario, codigo);
+            // Chamada à API para validar o código
+            const response = await verifyEmailCode(emailUsuario, codigo);
 
             if (response.success) {
                 setMensagemSucesso(true);
                 
-                // ➡️ SUCESSO: Redireciona para a validação do WhatsApp, passando o número
+                // Sucesso: Redireciona para a página principal ou dashboard
                 setTimeout(() => {
-                    navigate('/validacao-whatsapp', { 
-                        state: { 
-                            whatsappNumber: whatsappUsuario, // Passa o número para a próxima tela
-                            email: emailUsuario
-                        } 
-                    });
-                }, 2500); // Dá tempo para o usuário ler a mensagem de sucesso
-                
+                    navigate('/'); // ou qualquer rota que você desejar após a validação
+                }, 2500);
             }
         } catch (error) {
-            // O erro é o objeto { error: 'mensagem', status: 400 } que a api.js lança
-            const erroMsg = error.error || 'Erro ao validar o código. Verifique se o código está correto ou tente reenviar.';
+            const erroMsg = error.error || error.message || 'Erro ao validar o código. Verifique se o código está correto ou tente reenviar.';
             setMensagemErro(erroMsg);
+            console.error('Erro ao validar código:', error);
         } finally {
             setIsLoading(false);
         }
@@ -89,33 +94,70 @@ const ValidacaoEmail = () => {
 
     const handleReenviar = async (e) => {
         e.preventDefault();
-        setMensagemReenvio('Enviando novo código...');
-        setMensagemErro('');
         
-        // Proteção extra
         if (!emailUsuario) {
              setMensagemErro("E-mail ausente para reenvio.");
-             setMensagemReenvio(''); 
              return;
         }
 
+        // Verificar se ainda está no rate limit
+        if (tempoRestante > 0) {
+            setMensagemErro(`Aguarde ${tempoRestante} segundos antes de solicitar novo código.`);
+            return;
+        }
+
+        setMensagemReenvio('📧 Enviando novo código...');
+        setMensagemErro('');
+
         try {
-            // 💡 CHAMADA REAL À API PARA REENVIAR CÓDIGO
-            await resendVerification(emailUsuario); 
+            // Chamada à API para reenviar código
+            const response = await resendEmailCode(emailUsuario);
+
+            // Verificar se o backend retornou rate limit
+            if (response.tempoRestante) {
+                setTempoRestante(response.tempoRestante);
+                setMensagemErro(`Aguarde ${response.tempoRestante} segundos antes de solicitar novo código.`);
+                setMensagemReenvio('');
+                return;
+            }
 
             setMensagemReenvio('✅ Um novo código foi enviado para seu e-mail!');
-            setTimeout(() => setMensagemReenvio(''), 4000);
+            
+            // Mostrar código em DEV (se o backend retornar)
+            if (response.codigo) {
+                console.log('🔐 CÓDIGO DE DEV:', response.codigo);
+                setMensagemReenvio(`✅ Código enviado! (DEV: ${response.codigo})`);
+            }
+            
+            setTimeout(() => setMensagemReenvio(''), 5000);
 
         } catch (error) {
-            const erroMsg = error.error || 'Erro ao tentar reenviar o código. Tente novamente mais tarde.';
-            setMensagemErro(erroMsg);
-            setMensagemReenvio(''); // Limpa a mensagem de carregamento/sucesso
+            console.error('❌ Erro ao reenviar código:', error);
+            
+            // Tratar erro de rate limit
+            if (error.tempoRestante) {
+                setTempoRestante(error.tempoRestante);
+                setMensagemErro(`Aguarde ${error.tempoRestante} segundos antes de solicitar novo código.`);
+            } else {
+                const erroMsg = error.error || error.message || 'Erro ao tentar reenviar o código. Tente novamente mais tarde.';
+                setMensagemErro(erroMsg);
+            }
+            
+            setMensagemReenvio('');
         }
     };
 
-    // Não renderiza nada se o email estiver faltando até o redirecionamento
+    // Não renderiza nada se o email estiver faltando
     if (!emailUsuario) {
-        return <div className="login-container">Carregando...</div>; 
+        return (
+            <div className="login-container">
+                <div className="login-card">
+                    <div style={{ textAlign: 'center', padding: '30px' }}>
+                        <p>Carregando...</p>
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     return (
@@ -126,16 +168,13 @@ const ValidacaoEmail = () => {
                     <div className="logo-icon">📩</div>
                     <h1>Confirme seu <span>E-mail</span></h1>
                     <p>Enviamos o código para <strong>{emailUsuario}</strong>.</p>
-                    <p style={{fontSize: '0.85rem', color: '#666', marginTop: '5px'}}>
-                        Passo 1 de 2: Verificação de E-mail
-                    </p>
                 </div>
 
                 {mensagemSucesso ? (
                     <div className="success-message">
                         <div style={{ fontSize: '3rem', marginBottom: '10px' }}>✅</div>
                         <h3>E-mail Confirmado!</h3>
-                        <p>Validação concluída. Redirecionando para a confirmação do WhatsApp.</p>
+                        <p>Validação concluída com sucesso! Redirecionando...</p>
                     </div>
                 ) : (
                     <form onSubmit={handleSubmit} className="login-form">
@@ -147,7 +186,6 @@ const ValidacaoEmail = () => {
                                 placeholder="000000"
                                 value={codigo}
                                 onChange={handleInputChange}
-                                // Estilo para centralizar os 6 dígitos
                                 style={{ letterSpacing: '8px', textAlign: 'center', fontSize: '1.2rem' }}
                                 required
                                 maxLength={6}
@@ -157,7 +195,7 @@ const ValidacaoEmail = () => {
 
                         {mensagemErro && (
                             <p style={{ color: '#dc3545', fontSize: '0.9rem', textAlign: 'center', marginBottom: '10px' }}>
-                                {mensagemErro}
+                                ❌ {mensagemErro}
                             </p>
                         )}
 
@@ -167,14 +205,30 @@ const ValidacaoEmail = () => {
                             </p>
                         )}
 
-                        <button type="submit" className="btn-login" disabled={codigo.length !== 6 || isLoading}>
+                        <button 
+                            type="submit" 
+                            className="btn-login" 
+                            disabled={codigo.length !== 6 || isLoading}
+                        >
                             {isLoading ? 'Validando...' : 'Validar Código'}
                         </button>
 
                         <div style={{ marginTop: '15px', textAlign: 'center', fontSize: '0.9rem' }}>
                             <p>Não recebeu? 
-                                <a href="#!" onClick={handleReenviar} style={{ fontWeight: 'bold', marginLeft: '5px' }} disabled={isLoading}>
-                                    Reenviar Código
+                                <a 
+                                    href="#!" 
+                                    onClick={handleReenviar}
+                                    style={{ 
+                                        fontWeight: 'bold', 
+                                        marginLeft: '5px',
+                                        cursor: tempoRestante > 0 ? 'not-allowed' : 'pointer',
+                                        opacity: tempoRestante > 0 ? 0.5 : 1,
+                                        pointerEvents: tempoRestante > 0 ? 'none' : 'auto'
+                                    }}
+                                >
+                                    {tempoRestante > 0 
+                                        ? `Reenviar em ${tempoRestante}s` 
+                                        : 'Reenviar Código'}
                                 </a>
                             </p>
                         </div>

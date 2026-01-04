@@ -9,25 +9,36 @@ import PainelBarbeiro from './pages/PainelBarbeiro.jsx';
 import ValidacaoEmail from "./pages/ValidacaoEmail.jsx";
 import ValidacaoWhatsapp from "./pages/ValidacaoWhatsapp.jsx";
 
+// 🚨 NOVO: Importe o componente de proteção de rota
+import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute.jsx'; // ⬅️ Ajuste o caminho conforme sua estrutura
 
 function App() {
   return (
     <>
-    
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/cadastro" element={<Register />} />
-        <Route path="/agendamento" element={<Agendamento/>} />
-        <Route path="/esqueci-senha" element={<EsqueciSenha/>} />
-        <Route path="/painel" element={<PainelBarbeiro/>} />
-        <Route path="/validacao-email" element={<ValidacaoEmail/>} />
-        <Route path="/validacao-whatsapp" element={<ValidacaoWhatsapp/>} />
-        
-      </Routes> 
-    </BrowserRouter>
-    
+      <BrowserRouter>
+        <Routes>
+          {/* Rotas Públicas */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/cadastro" element={<Register />} />
+          <Route path="/agendamento" element={<Agendamento/>} />
+          <Route path="/esqueci-senha" element={<EsqueciSenha/>} />
+          <Route path="/validacao-email" element={<ValidacaoEmail/>} />
+          <Route path="/validacao-whatsapp" element={<ValidacaoWhatsapp/>} />
+          
+          {/* 🚨 ROTA PROTEGIDA: Apenas Barbeiros */}
+          <Route 
+            path="/painel" 
+            element={
+              // Envolva o PainelBarbeiro no ProtectedRoute
+              <ProtectedRoute>
+                <PainelBarbeiro/>
+              </ProtectedRoute>
+            } 
+          />
+          
+        </Routes> 
+      </BrowserRouter>
     </>
   )
 }

@@ -1,26 +1,19 @@
-// src/components/ProtectedRoute.jsx
-
-import React from 'react';
+// components/ProtectedRoute.jsx
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext'; // Importe o hook
 
-// Este componente usa o Outlet do React Router v6 para renderizar as rotas filhas
-const ProtectedRoute = () => {
-    const { isUserLoggedIn, loading } = useAuth();
-    
-    // Se ainda estiver carregando, mostra um loader (opcional)
-    if (loading) {
-        return <div>Carregando...</div>; 
-    }
+const ProtectedRoute = ({ children }) => {
+  // ⚠️ ESTA É APENAS A VERIFICAÇÃO FRONT-END.
+  // O token real deve ser verificado e decodificado.
+  const authToken = localStorage.getItem('authToken'); 
+  const userRole = 'barbeiro'; // ⬅️ DEVE SER EXTRAÍDO DO TOKEN DECODIFICADO
 
-    // 🚨 REGRA PRINCIPAL: Se não estiver logado, redireciona para a página de login
-    if (!isUserLoggedIn) {
-        // Redireciona para o caminho da sua rota de login
-        return <Navigate to="/login" replace />;
-    }
+  if (!authToken || userRole !== 'barbeiro') {
+    // Redireciona para a página de login se não for autorizado
+    return <Navigate to="/login" replace />;
+  }
 
-    // Se estiver logado, renderiza o componente da rota (ex: Agendamento)
-    return <Outlet />;
+  // Renderiza os componentes filhos (PainelBarbeiro) se estiver autenticado e for barbeiro
+  return children ? children : <Outlet />;
 };
 
 export default ProtectedRoute;

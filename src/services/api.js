@@ -1,128 +1,211 @@
-// src/services/api.js (ou index.js)
+// src/services/api.js - FRONTEND
+// ⚠️ IMPORTANTE: Verifique se a porta está correta!
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = 'http://localhost:3001/api'; // ✅ Backend roda na porta 3001
 
-// ==================== FUNÇÃO AUXILIAR CENTRALIZADA ==================== //
+// ==================== FUNÇÃO BASE DE CHAMADA ====================
 
-/**
- * Função utilitária para fazer chamadas à API com tratamento de erro consistente.
- * @param {string} endpoint - O caminho da rota (ex: 'clientes', 'whatsapp/verify-code').
- * @param {object} data - O corpo da requisição JSON (opcional, para POST/PUT/PATCH).
- * @param {string} method - Método HTTP (GET, POST, PUT, DELETE).
- * @returns {Promise<object>} O resultado JSON da API.
- */
-const apiCall = async (endpoint, data = null, method = 'GET') => {
+export const apiCall = async (endpoint, options = {}) => {
+  try {
+    console.log(`🌐 [API] Chamando: ${API_URL}${endpoint}`);
+    console.log(`📤 [API] Dados enviados:`, options.body ? JSON.parse(options.body) : 'Sem body');
     
-    // Tenta pegar o token para usar em chamadas autenticadas
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-
-    const headers = {
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers: {
         'Content-Type': 'application/json',
-        // Adiciona Authorization se o token estiver presente
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-    };
-    
-    // Configuração da requisição
-    const config = {
-        method: method,
-        headers: headers,
-        // Adiciona body apenas se o método for POST, PUT ou PATCH
-        ...(data && (method === 'POST' || method === 'PUT' || method === 'PATCH') && { body: JSON.stringify(data) })
-    };
+        ...options.headers,
+      },
+    });
 
+    console.log(`📊 [API] Status da resposta: ${response.status}`);
+
+    // Tenta parsear a resposta
+    let data;
     try {
-        const response = await fetch(`${API_URL}/${endpoint}`, config);
-        const result = await response.json();
-
-        if (!response.ok) {
-            // Garante que o erro retorne a mensagem do backend e o status
-            throw {
-                error: result.error || result.message || `Erro ao processar ${endpoint}`,
-                status: response.status,
-            }; 
-        }
-
-        return result;
-
-    } catch (error) {
-        console.error(`API Error em ${endpoint}:`, error);
-        // Propaga o erro
-        throw error; 
+      const textResponse = await response.text();
+      console.log(`📥 [API] Resposta bruta:`, textResponse);
+      
+      data = textResponse ? JSON.parse(textResponse) : {};
+    } catch (parseError) {
+      console.error('❌ Erro ao parsear JSON:', parseError);
+      throw { 
+        error: 'Resposta inválida do servidor',
+        details: 'Servidor retornou dados não-JSON' 
+      };
     }
+
+    // Se não for sucesso, lança erro com a mensagem do backend
+    if (!response.ok) {
+      console.error(`❌ [API] Erro ${response.status}:`, data);
+      
+      // Garante que sempre lance um objeto com a propriedade 'error'
+      throw { 
+        error: data.error || data.message || `Erro ${response.status}`,
+        status: response.status,
+        ...data 
+      };
+    }
+
+    console.log(`✅ [API] Sucesso em ${endpoint}:`, data);
+    return data;
+
+  } catch (error) {
+    console.error(`❌ [API] Erro em ${endpoint}:`, error);
+    
+    // Se for erro de conexão (servidor não está rodando)
+    if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
+      throw {
+        error: '🔴 Não foi possível conectar ao servidor. Verifique se o backend está rodando na porta 3001.',
+        details: 'ERR_CONNECTION_REFUSED'
+      };
+    }
+    
+    // Se já for um objeto de erro estruturado, apenas repassa
+    if (error.error) {
+      throw error;
+    }
+    
+    // Caso contrário, estrutura o erro
+    throw { 
+      error: error.message || 'Erro desconhecido',
+      originalError: error 
+    };
+  }
 };
 
-// ==================== CLIENTES ==================== //
+// ==================== CLIENTES ====================
 
-export const registerClient = async (data) => {
-    return apiCall('clientes', data, 'POST');
+export const registerClient = async (clientData) => {
+  console.log('📝 [REGISTER] Registrando cliente:', { ...clientData, senha: '***' });
+  return apiCall('/clientes/cadastro', {
+    method: 'POST',
+    body: JSON.stringify(clientData),
+  });
 };
 
-export const loginClient = async (email, senha) => {
-    return apiCall('clientes/login', { email, senha }, 'POST');
+export const loginClient = async (credentials) => {
+  console.log('🔐 [LOGIN] Fazendo login:', { 
+    email: credentials.email, 
+    senha: '***',
+    objetoCompleto: credentials 
+  });
+  
+  // ✅ Garantir que está enviando objeto correto
+  const payload = {
+    email: credentials.email,
+    senha: credentials.senha
+  };
+  
+  console.log('📦 [LOGIN] Payload sendo enviado:', JSON.stringify(payload));
+  
+  return apiCall('/clientes/login', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
 };
 
-export const getClients = async () => {
-    return apiCall('clientes', null, 'GET');
+// ==================== EMAIL ====================
+
+export const verifyEmailCode = async (email, code) => {
+  console.log('✉️ [EMAIL] Verificando código:', { email, code });
+  return apiCall('/auth/email/verify', {
+    method: 'POST',
+    body: JSON.stringify({ email, code }),
+  });
 };
 
-// ==================== AGENDAMENTOS ==================== //
-
-export const createAppointment = async (data) => {
-    return apiCall('agendamentos', data, 'POST');
+export const resendEmailCode = async (email) => {
+  console.log('🔄 [EMAIL] Reenviando código para:', email);
+  return apiCall('/auth/email/resend', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
 };
 
-export const getAppointments = async () => {
-    return apiCall('agendamentos', null, 'GET');
-};
+// ==================== WHATSAPP ====================
 
-export const updateAppointment = async (id, data) => {
-    return apiCall(`agendamentos/${id}`, data, 'PUT');
-};
-
-export const deleteAppointment = async (id) => {
-    // Passa null para data (sem body)
-    return apiCall(`agendamentos/${id}`, null, 'DELETE');
-};
-
-// ==================== SERVIÇOS ==================== //
-
-export const getServices = async () => {
-    return apiCall('servicos', null, 'GET');
-};
-
-
-// ==================== CLIENTES (VALIDAÇÃO E-MAIL) ==================== //
-
-export const verifyCode = async (email, code) => {
-    // Esta função usará o token de login para autenticação se ele existir
-    return apiCall('clientes/verify', { email, code }, 'POST');
-};
-
-export const resendVerification = async (email) => {
-    return apiCall('clientes/resend-verification', { email }, 'POST');
-};
-
-// ==================== CLIENTES (VALIDAÇÃO WHATSAPP) ==================== //
-
-/**
- * 1. 💬 Função para VALIDAR o código recebido (Verifica o código Twilio).
- * @param {string} whatsappNumber - O número no formato +55DDDNUMERO.
- * @param {string} code - O código de 6 dígitos.
- */
-export const verifyWhatsappCode = async (whatsappNumber, code) => {
-    return apiCall('whatsapp/verify-code', {
-        whatsappNumber,
-        code
-    }, 'POST');
-};
-
-
-/**
- * 2. 🔁 Função para REENVIAR o código (Solicita um novo código Twilio).
- * @param {string} whatsappNumber - O número no formato +55DDDNUMERO.
- */
 export const resendWhatsappCode = async (whatsappNumber) => {
-    return apiCall('whatsapp/resend-code', {
-        whatsappNumber
-    }, 'POST');
+  console.log('📱 [WHATSAPP] Enviando código para:', whatsappNumber);
+  return apiCall('/auth/whatsapp/send', {
+    method: 'POST',
+    body: JSON.stringify({ whatsappNumber }),
+  });
+};
+
+export const verifyWhatsappCode = async (whatsappNumber, code) => {
+  console.log('📱 [WHATSAPP] Verificando código:', { whatsappNumber, code });
+  return apiCall('/auth/whatsapp/verify', {
+    method: 'POST',
+    body: JSON.stringify({ whatsappNumber, code }),
+  });
+};
+
+// ==================== VALIDAÇÃO DE TELEFONE ====================
+
+export const validarTelefone = async (telefone) => {
+  console.log('📞 [TELEFONE] Validando:', telefone);
+  return apiCall('/auth/telefone/validar', {
+    method: 'POST',
+    body: JSON.stringify({ telefone }),
+  });
+};
+
+// ==================== ADMIN ====================
+
+export const fetchAdminDashboard = async (adminToken) => {
+  console.log('👑 [ADMIN] Buscando dashboard');
+  return apiCall('/admin/dashboard', {
+    method: 'GET', // ⚠️ CORRIGIDO: Dashboard geralmente é GET, não POST
+    headers: {
+      'Authorization': `Bearer ${adminToken}`,
+    },
+  });
+};
+
+export const fetchAllClients = async (adminToken) => {
+  console.log('👥 [ADMIN] Buscando todos os clientes');
+  return apiCall('/admin/clientes', {
+    method: 'GET', // ⚠️ CORRIGIDO: Buscar dados geralmente é GET, não POST
+    headers: {
+      'Authorization': `Bearer ${adminToken}`,
+    },
+  });
+};
+
+export const deleteClient = async (clientId, adminToken) => {
+  console.log('🗑️ [ADMIN] Deletando cliente:', clientId);
+  return apiCall(`/admin/clientes/${clientId}`, {
+    method: 'DELETE', // ⚠️ CORRIGIDO: Usar DELETE ao invés de POST com /delete
+    headers: {
+      'Authorization': `Bearer ${adminToken}`,
+    },
+  });
+};
+
+export const updateClientRole = async (clientId, newRole, adminToken) => {
+  console.log('🔄 [ADMIN] Atualizando role do cliente:', { clientId, newRole });
+  return apiCall(`/admin/clientes/${clientId}/role`, {
+    method: 'PUT', // ⚠️ CORRIGIDO: Usar PUT para atualização ao invés de POST
+    body: JSON.stringify({ role: newRole }), // ⚠️ CORRIGIDO: propriedade 'role' ao invés de 'newRole'
+    headers: {
+      'Authorization': `Bearer ${adminToken}`,
+    },
+  });
+};
+
+// ==================== EXPORTS ====================
+
+export default {
+  registerClient,
+  loginClient,
+  verifyEmailCode,
+  resendEmailCode,
+  resendWhatsappCode,
+  verifyWhatsappCode,
+  validarTelefone,
+  fetchAdminDashboard,
+  fetchAllClients,
+  deleteClient,
+  updateClientRole,
 };
