@@ -48,6 +48,15 @@ const initialAppointments = [
     time: "16:45",
     status: "cancelled",
     notes: "Cancelado pelo cliente ontem à noite."
+  },
+  {
+    id: 5,
+    clientName: "Wesley Cabrito",
+    service: "Corte Disfarçado",
+    date: "2026-01-10",
+    time: "16:45",
+    status: "pending",
+    notes: "Atraso de 10 min avisado. Ligar antes de iniciar."
   }
 ];
 

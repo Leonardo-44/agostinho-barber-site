@@ -7,7 +7,7 @@ import Agendamento from './pages/Agendamento.jsx';
 import EsqueciSenha from "./pages/EsqueciSenha.jsx";
 import PainelBarbeiro from './pages/PainelBarbeiro.jsx';
 import ValidacaoEmail from "./pages/ValidacaoEmail.jsx";
-import ValidacaoWhatsapp from "./pages/ValidacaoWhatsapp.jsx";
+import RedefinirSenhaUser from "./pages/RedefinirSenha.jsx";
 
 // 🚨 NOVO: Importe o componente de proteção de rota
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute.jsx'; // ⬅️ Ajuste o caminho conforme sua estrutura
@@ -24,7 +24,7 @@ function App() {
           <Route path="/agendamento" element={<Agendamento/>} />
           <Route path="/esqueci-senha" element={<EsqueciSenha/>} />
           <Route path="/validacao-email" element={<ValidacaoEmail/>} />
-          <Route path="/validacao-whatsapp" element={<ValidacaoWhatsapp/>} />
+          <Route path="/redefinir-senha" element={<RedefinirSenhaUser/>}/>
           
           {/* 🚨 ROTA PROTEGIDA: Apenas Barbeiros */}
           <Route 

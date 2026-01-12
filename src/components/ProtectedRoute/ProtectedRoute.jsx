@@ -1,19 +1,17 @@
-// components/ProtectedRoute.jsx
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 
-const ProtectedRoute = ({ children }) => {
-  // ⚠️ ESTA É APENAS A VERIFICAÇÃO FRONT-END.
-  // O token real deve ser verificado e decodificado.
-  const authToken = localStorage.getItem('authToken'); 
-  const userRole = 'barbeiro'; // ⬅️ DEVE SER EXTRAÍDO DO TOKEN DECODIFICADO
-
-  if (!authToken || userRole !== 'barbeiro') {
-    // Redireciona para a página de login se não for autorizado
+function ProtectedRoute({ children }) {
+  // Aqui você verifica se o usuário está autenticado
+  // Por exemplo, verificando um token no localStorage
+  const token = localStorage.getItem('token');
+  
+  if (!token) {
+    // Se não tiver token, redireciona para login
     return <Navigate to="/login" replace />;
   }
-
-  // Renderiza os componentes filhos (PainelBarbeiro) se estiver autenticado e for barbeiro
-  return children ? children : <Outlet />;
-};
+  
+  // Se tiver token, renderiza o componente protegido
+  return children;
+}
 
 export default ProtectedRoute;
