@@ -4,6 +4,8 @@
 const API_URL = import.meta.env.REACT_APP_API_URL || "http://localhost:3001/api";
 
 console.log("🔍 API_URL configurada:", API_URL);
+console.log('🔍 Variável de ambiente:', process.env.REACT_APP_API_URL);
+console.log('🔍 Todas as env:', process.env);
 
 // ==================== FUNÇÃO BASE DE CHAMADA ====================
 
