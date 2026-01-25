@@ -1,7 +1,7 @@
 /*APRESENTATION*/
 
 .fundo-apresentation {
-  background: linear-gradient(rgb(0, 0, 0, 0.6)), url(../../public/fundo.svg);
+  background: linear-gradient(rgb(0, 0, 0, 0.6)), url(../../public/fundo.jpg);
   background-size: cover;
   background-position: center;
   position: static;

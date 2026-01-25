@@ -7,8 +7,6 @@ import {
   AlertCircle,
   Home,
   Trash2,
-  CheckCircle,
-  XCircle,
   Loader
 } from 'lucide-react';
 
@@ -18,33 +16,27 @@ const MeusAgendamentos = () => {
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('all');
 
-  // ✅ Buscar agendamentos do cliente logado
   const fetchMeusAgendamentos = async () => {
     try {
       setLoading(true);
-      setError('');
       const token = localStorage.getItem("authToken");
-
       if (!token) {
         setError('Você precisa estar logado');
         setLoading(false);
         return;
       }
 
-      const response = await fetch("http://localhost:3001/api/agendamentos/meus", {
+      const response = await fetch("http://localhost:3001/api/agendamentos/cliente/meus", {
         headers: { "Authorization": `Bearer ${token}` }
       });
 
       const data = await response.json();
-
       if (data.success) {
         setAgendamentos(data.agendamentos || []);
-        console.log("✅ Agendamentos carregados:", data.agendamentos);
       } else {
         setError(data.error || 'Erro ao carregar agendamentos');
       }
     } catch (err) {
-      console.error("❌ Erro ao buscar agendamentos:", err);
       setError('Erro ao conectar com o servidor');
     } finally {
       setLoading(false);
@@ -55,241 +47,109 @@ const MeusAgendamentos = () => {
     fetchMeusAgendamentos();
   }, []);
 
-  // ✅ Cancelar agendamento
   const handleCancelAgendamento = async (id) => {
-    if (!window.confirm("Deseja cancelar este agendamento?")) return;
+    if (!window.confirm("Deseja realmente cancelar este agendamento?")) return;
 
     try {
       const token = localStorage.getItem("authToken");
-      const response = await fetch(`http://localhost:3001/api/agendamentos/${id}/cancelar`, {
-        method: "DELETE",
-        headers: { "Authorization": `Bearer ${token}` }
+      const response = await fetch(`http://localhost:3001/api/agendamentos/cliente/${id}/cancelar`, {
+        method: "PUT", 
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
+        }
       });
 
       if (response.ok) {
-        setAgendamentos(prev => prev.filter(a => a.id !== id));
+        setAgendamentos(prev => prev.map(a => 
+          a.id === id ? { ...a, status: 'cancelled' } : a
+        ));
+        alert("Agendamento cancelado com sucesso!");
       } else {
         setError('Erro ao cancelar agendamento');
       }
     } catch (err) {
-      console.error("❌ Erro ao cancelar:", err);
-      setError('Erro ao cancelar agendamento');
+      setError('Erro ao conectar com o servidor');
     }
   };
 
-  // ✅ Filtrar agendamentos
+  // ✅ Função para padronizar a verificação de status (evita erro de maiúsculas/minúsculas)
+  const compararStatus = (statusOriginal, statusAlvo) => {
+    return statusOriginal?.toLowerCase() === statusAlvo.toLowerCase();
+  };
+
   const agendamentosFiltrados = agendamentos.filter(a => {
     if (filter === 'all') return true;
-    if (filter === 'pending') return a.status === 'pending';
-    if (filter === 'completed') return a.status === 'completed';
-    if (filter === 'cancelled') return a.status === 'cancelled';
-    return true;
+    return compararStatus(a.status, filter);
   });
 
-  // ✅ Ordenar por data (próximos primeiro)
-  const agendamentosOrdenados = [...agendamentosFiltrados].sort((a, b) => {
-    const dataA = new Date(a.data_agendamento);
-    const dataB = new Date(b.data_agendamento);
-    return dataA - dataB;
-  });
+  const agendamentosOrdenados = [...agendamentosFiltrados].sort((a, b) => 
+    new Date(a.data_agendamento) - new Date(b.data_agendamento)
+  );
 
-  // ✅ Helpers
   const formatDate = (dateString) => {
     if (!dateString) return "--/--/--";
-    try {
-      return new Date(dateString).toLocaleDateString('pt-BR', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-    } catch {
-      return "--/--/--";
-    }
+    return new Date(dateString).toLocaleDateString('pt-BR', {
+      day: '2-digit', month: '2-digit', year: 'numeric'
+    });
   };
 
   const getStatusLabel = (status) => {
-    switch (status) {
-      case 'pending': return 'Pendente';
-      case 'completed': return 'Concluído';
-      case 'cancelled': return 'Cancelado';
-      default: return status;
-    }
+    if (compararStatus(status, 'pending')) return 'Pendente';
+    if (compararStatus(status, 'completed')) return 'Concluído';
+    if (compararStatus(status, 'cancelled')) return 'Cancelado';
+    return status;
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'pending': return 'status-pending';
-      case 'completed': return 'status-completed';
-      case 'cancelled': return 'status-cancelled';
-      default: return 'status-pending';
-    }
-  };
-
-  const isProximo = (dateString, status) => {
-    if (status !== 'pending') return false;
-    const data = new Date(dateString);
-    const hoje = new Date();
-    const proximos7Dias = new Date(hoje.getTime() + 7 * 24 * 60 * 60 * 1000);
-    return data >= hoje && data <= proximos7Dias;
-  };
-
-  if (loading) {
-    return (
-      <div className="loading-screen">
-        <Loader size={48} className="spin" />
-        <p>Carregando seus agendamentos...</p>
-      </div>
-    );
-  }
+  if (loading) return <div className="loading-screen"><Loader className="spin" /></div>;
 
   return (
     <div className="agendamentos-container">
-      {/* HEADER */}
       <header className="agendamentos-header">
-        <button
-          onClick={() => window.history.back()}
-          className="btn-voltar"
-          title="Voltar"
-        >
-          <Home size={24} />
-        </button>
-
-        <div className="header-content">
-          <Scissors size={40} className="header-icon" />
-          <div>
-            <h1>Meus Agendamentos</h1>
-            <p>Acompanhe seus cortes marcados</p>
-          </div>
-        </div>
+        <button onClick={() => window.history.back()} className="btn-voltar"><Home size={24} /></button>
+        <h1>Meus Agendamentos</h1>
       </header>
 
-      {/* ERROR BANNER */}
-      {error && (
-        <div className="error-banner">
-          <AlertCircle size={18} />
-          <p>{error}</p>
-          <button onClick={() => setError('')} className="error-close">&times;</button>
-        </div>
-      )}
-
-      {/* RESUMO */}
-      <div className="resumo-stats">
-        <div className="stat-box">
-          <p className="stat-number">{agendamentos.filter(a => a.status === 'pending').length}</p>
-          <p className="stat-label">Pendentes</p>
-        </div>
-        <div className="stat-box">
-          <p className="stat-number">{agendamentos.filter(a => a.status === 'completed').length}</p>
-          <p className="stat-label">Concluídos</p>
-        </div>
-        <div className="stat-box">
-          <p className="stat-number">{agendamentos.filter(a => a.status === 'cancelled').length}</p>
-          <p className="stat-label">Cancelados</p>
-        </div>
-      </div>
-
-      {/* FILTROS */}
       <div className="filtros-container">
-        {[
-          { id: 'all', label: '📋 Todos' },
-          { id: 'pending', label: '⏳ Pendentes' },
-          { id: 'completed', label: '✅ Concluídos' },
-          { id: 'cancelled', label: '❌ Cancelados' }
-        ].map(f => (
-          <button
-            key={f.id}
-            onClick={() => setFilter(f.id)}
-            className={`filtro-btn ${filter === f.id ? 'ativo' : ''}`}
-          >
-            {f.label}
+        {['all', 'pending', 'completed', 'cancelled'].map(f => (
+          <button key={f} onClick={() => setFilter(f)} className={`filtro-btn ${filter === f ? 'ativo' : ''}`}>
+            {f === 'all' ? 'Todos' : getStatusLabel(f)}
           </button>
         ))}
       </div>
 
-      {/* LISTA DE AGENDAMENTOS */}
       <div className="agendamentos-lista">
-        {agendamentosOrdenados.length > 0 ? (
-          agendamentosOrdenados.map(agendamento => (
-            <div
-              key={agendamento.id}
-              className={`agendamento-item ${isProximo(agendamento.data_agendamento, agendamento.status) ? 'proximo' : ''}`}
-            >
-              {/* Badge de próximo */}
-              {isProximo(agendamento.data_agendamento, agendamento.status) && (
-                <div className="badge-proximo">🔔 Próximo!</div>
-              )}
-
-              {/* Status */}
-              <div className="item-header">
-                <span className={`status-badge ${getStatusColor(agendamento.status)}`}>
-                  {getStatusLabel(agendamento.status)}
-                </span>
-              </div>
-
-              {/* Serviço */}
-              <div className="item-servico">
-                <Scissors size={18} />
-                <div>
-                  <p className="servico-nome">{agendamento.servico_nome || 'Serviço'}</p>
-                  {agendamento.observacoes && (
-                    <p className="servico-obs">{agendamento.observacoes}</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Data e Hora */}
-              <div className="item-info">
-                <div className="info-box">
-                  <Calendar size={16} />
-                  <div>
-                    <p className="info-label">Data</p>
-                    <p className="info-value">{formatDate(agendamento.data_agendamento)}</p>
-                  </div>
-                </div>
-
-                <div className="info-box">
-                  <Clock size={16} />
-                  <div>
-                    <p className="info-label">Horário</p>
-                    <p className="info-value">{agendamento.horario_agendamento || '--:--'}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Valor */}
-              <div className="item-valor">
-                <p className="valor-label">Valor</p>
-                <p className="valor-amount">R$ {Number(agendamento.valor_total || 0).toFixed(2)}</p>
-              </div>
-
-              {/* Ações */}
-              <div className="item-acoes">
-                {agendamento.status === 'pending' && (
-                  <button
-                    onClick={() => handleCancelAgendamento(agendamento.id)}
-                    className="btn-cancelar"
-                    title="Cancelar agendamento"
-                  >
-                    <Trash2 size={16} />
-                    <span>Cancelar</span>
-                  </button>
-                )}
-              </div>
+        {agendamentosOrdenados.map(agendamento => (
+          <div key={agendamento.id} className="agendamento-item">
+            <div className="item-header">
+              <span className={`status-badge ${agendamento.status?.toLowerCase()}`}>
+                {getStatusLabel(agendamento.status)}
+              </span>
             </div>
-          ))
-        ) : (
-          <div className="empty-state">
-            <AlertCircle size={48} />
-            <p>Você não tem agendamentos {filter !== 'all' ? 'nesta categoria' : 'no momento'}</p>
-            <button
-              onClick={() => window.location.href = '/agendamento'}
-              className="btn-agendar"
-            >
-              ✂️ Fazer um Agendamento
-            </button>
+
+            <div className="item-servico">
+              <Scissors size={18} />
+              <p>{agendamento.servico_nome}</p>
+            </div>
+
+            <div className="item-info">
+              <span><Calendar size={14} /> {formatDate(agendamento.data_agendamento)}</span>
+              <span><Clock size={14} /> {agendamento.horario_agendamento}</span>
+            </div>
+
+            <div className="item-acoes">
+              {/* ✅ MUDANÇA AQUI: Aceita 'pending' ou 'Pendente' */}
+              {(compararStatus(agendamento.status, 'pending')) && (
+                <button
+                  onClick={() => handleCancelAgendamento(agendamento.id)}
+                  className="btn-cancelar"
+                >
+                  <Trash2 size={16} /> Cancelar Corte
+                </button>
+              )}
+            </div>
           </div>
-        )}
+        ))}
       </div>
     </div>
   );

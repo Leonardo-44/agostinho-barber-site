@@ -1,53 +1,61 @@
-import React, { useState, useEffect } from 'react';
-import './BarberDashboard.css';
-import { 
-  Calendar, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
-  Trash2, 
-  User, 
-  FileText, 
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import "./BarberDashboard.css";
+import {
+  Calendar,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Trash2,
+  User,
+  FileText,
   AlertCircle,
   Scissors,
   DollarSign,
-  Home
-} from 'lucide-react';
+  Home,
+  Plus,
+} from "lucide-react";
 
 const BarberDashboard = () => {
+  const navigate = useNavigate();
   const [appointments, setAppointments] = useState([]);
-  const [filter, setFilter] = useState('pending');
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [filter, setFilter] = useState("pending");
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().split("T")[0],
+  );
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   // ✅ Buscar agendamentos do backend
   const fetchAppointments = async () => {
     try {
       setLoading(true);
-      setError('');
+      setError("");
       const token = localStorage.getItem("authToken");
-      
+
       if (!token) {
-        setError('Você precisa estar logado');
+        setError("Você precisa estar logado");
         setLoading(false);
         return;
       }
 
-      const response = await fetch("http://localhost:3001/api/agendamentos/lista", {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      
+      const response = await fetch(
+        "http://localhost:3001/api/agendamentos/lista",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+
       const data = await response.json();
-      
+
       if (data.success) {
         setAppointments(data.agendamentos || []);
       } else {
-        setError(data.error || 'Erro ao carregar agendamentos');
+        setError(data.error || "Erro ao carregar agendamentos");
       }
     } catch (err) {
       console.error("❌ Erro ao buscar agendamentos:", err);
-      setError('Erro ao conectar com o servidor');
+      setError("Erro ao conectar com o servidor");
     } finally {
       setLoading(false);
     }
@@ -64,25 +72,30 @@ const BarberDashboard = () => {
   const handleStatusChange = async (id, newStatus) => {
     try {
       const token = localStorage.getItem("authToken");
-      const response = await fetch(`http://localhost:3001/api/agendamentos/${id}/status`, {
-        method: "PUT",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}` 
+      const response = await fetch(
+        `http://localhost:3001/api/agendamentos/${id}/status`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status: newStatus }),
         },
-        body: JSON.stringify({ status: newStatus })
-      });
+      );
 
       if (response.ok) {
-        setAppointments(prev => prev.map(app => 
-          app.id === id ? { ...app, status: newStatus } : app
-        ));
+        setAppointments((prev) =>
+          prev.map((app) =>
+            app.id === id ? { ...app, status: newStatus } : app,
+          ),
+        );
       } else {
-        setError('Erro ao atualizar status');
+        setError("Erro ao atualizar status");
       }
     } catch (err) {
       console.error("❌ Erro ao atualizar status:", err);
-      setError('Erro ao atualizar status');
+      setError("Erro ao atualizar status");
     }
   };
 
@@ -92,68 +105,109 @@ const BarberDashboard = () => {
 
     try {
       const token = localStorage.getItem("authToken");
-      const response = await fetch(`http://localhost:3001/api/agendamentos/${id}/cancelar`, {
-        method: "DELETE",
-        headers: { "Authorization": `Bearer ${token}` }
-      });
+      const response = await fetch(
+        `http://localhost:3001/api/agendamentos/${id}/cancelar`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
 
       if (response.ok) {
-        setAppointments(prev => prev.filter(app => app.id !== id));
+        setAppointments((prev) => prev.filter((app) => app.id !== id));
       } else {
-        setError('Erro ao deletar agendamento');
+        setError("Erro ao deletar agendamento");
       }
     } catch (err) {
       console.error("❌ Erro ao deletar:", err);
-      setError('Erro ao deletar agendamento');
+      setError("Erro ao deletar agendamento");
     }
   };
 
   // ✅ Filtrar agendamentos por data e status
-  const filteredAppointments = appointments.filter(app => {
-    const appDate = app.data_agendamento 
-      ? new Date(app.data_agendamento).toISOString().split('T')[0] 
+  const filteredAppointments = appointments.filter((app) => {
+    // Garante que a data seja tratada corretamente sem deslocamento de fuso
+    const appDate = app.data_agendamento
+      ? app.data_agendamento.split("T")[0]
       : "";
-    
+
     const matchesDate = appDate === selectedDate;
-    const matchesFilter = filter === 'all' || app.status === filter;
-    
+
+    const statusLimpo = app.status?.toLowerCase() || "";
+    const filtroLimpo = filter.toLowerCase();
+
+    const matchesFilter =
+      filtroLimpo === "all" ||
+      (filtroLimpo === "pending" &&
+        (statusLimpo === "pending" ||
+          statusLimpo === "pendente" ||
+          statusLimpo === "confirmado")) ||
+      statusLimpo === filtroLimpo;
+
     return matchesDate && matchesFilter;
   });
 
   // ✅ Calcular estatísticas
   const stats = {
-    pending: appointments.filter(a => a.status === 'pending').length,
-    completed: appointments.filter(a => a.status === 'completed').length,
+    pending: appointments.filter((a) => {
+      const s = a.status?.toLowerCase();
+      const appDate = a.data_agendamento
+        ? new Date(a.data_agendamento).toISOString().split("T")[0]
+        : "";
+      // Filtra por status pendente E pela data selecionada
+      return (
+        (s === "pending" || s === "pendente" || s === "confirmado") &&
+        appDate === selectedDate
+      );
+    }).length,
+
+    completed: appointments.filter((a) => {
+      const s = a.status?.toLowerCase();
+      const appDate = a.data_agendamento
+        ? new Date(a.data_agendamento).toISOString().split("T")[0]
+        : "";
+      // Filtra por status concluído E pela data selecionada
+      return (
+        (s === "completed" || s === "concluído") && appDate === selectedDate
+      );
+    }).length,
+
     totalToday: appointments
-      .filter(a => a.status === 'completed' && 
-        (a.data_agendamento ? new Date(a.data_agendamento).toISOString().split('T')[0] : "") === selectedDate)
-      .reduce((acc, curr) => acc + (Number(curr.valor_total) || 0), 0)
+      .filter((a) => {
+        const s = a.status?.toLowerCase();
+        const appDate = a.data_agendamento
+          ? new Date(a.data_agendamento).toISOString().split("T")[0]
+          : "";
+        return (
+          (s === "completed" || s === "concluído") && appDate === selectedDate
+        );
+      })
+      .reduce((acc, curr) => acc + (Number(curr.valor_total) || 0), 0),
   };
 
   // ✅ Helpers
   const getStatusClass = (status) => {
-    switch (status) {
-      case 'completed': return 'status-completed';
-      case 'cancelled': return 'status-cancelled';
-      default: return 'status-pending';
-    }
+    const s = status?.toLowerCase();
+    if (s === "completed" || s === "concluído") return "status-completed";
+    if (s === "cancelled" || s === "cancelado") return "status-cancelled";
+    return "status-pending"; // Para 'pending', 'pendente' ou 'confirmado'
   };
 
   const formatDate = (dateString) => {
     if (!dateString) return "--/--/--";
     try {
-      return new Date(dateString).toLocaleDateString('pt-BR');
+      return new Date(dateString).toLocaleDateString("pt-BR");
     } catch {
       return "--/--/--";
     }
   };
 
   const getStatusLabel = (status) => {
-    switch (status) {
-      case 'completed': return 'Concluído';
-      case 'cancelled': return 'Cancelado';
-      default: return 'Pendente';
-    }
+    const s = status?.toLowerCase();
+    if (s === "completed" || s === "concluído") return "Concluído";
+    if (s === "cancelled" || s === "cancelado") return "Cancelado";
+    if (s === "confirmado") return "Confirmado (Manual)";
+    return "Pendente";
   };
 
   if (loading) {
@@ -169,23 +223,34 @@ const BarberDashboard = () => {
     <div className="dashboard-container">
       {/* HEADER */}
       <header className="dashboard-header">
-        <button 
-          onClick={() => window.history.back()}
+        <button
+          onClick={() => navigate("/")}
           className="btn-home"
           title="Voltar"
         >
           <Home size={28} />
         </button>
-        
+
         <div className="header-content">
           <div className="logo-icon">
             <Scissors size={40} />
           </div>
           <div>
-            <h1>Painel do <span>Barbeiro</span></h1>
+            <h1>
+              Painel do <span>Barbeiro</span>
+            </h1>
             <p>Gestão de Clientes e Serviços</p>
           </div>
         </div>
+
+        <button
+          onClick={() => navigate("/agendamento-barbeiro")}
+          className="btn-novo-agendamento"
+          title="Novo agendamento"
+        >
+          <Plus size={24} />
+          <span>Novo</span>
+        </button>
       </header>
 
       {/* ERROR BANNER */}
@@ -193,7 +258,9 @@ const BarberDashboard = () => {
         <div className="error-banner">
           <AlertCircle size={18} />
           <p>{error}</p>
-          <button onClick={() => setError('')} className="error-close">&times;</button>
+          <button onClick={() => setError("")} className="error-close">
+            &times;
+          </button>
         </div>
       )}
 
@@ -209,7 +276,9 @@ const BarberDashboard = () => {
         </div>
         <div className="stat-card">
           <p className="stat-label">💰 Faturamento</p>
-          <p className="stat-value stat-revenue">R$ {stats.totalToday.toFixed(2)}</p>
+          <p className="stat-value stat-revenue">
+            R$ {stats.totalToday.toFixed(2)}
+          </p>
         </div>
       </div>
 
@@ -217,9 +286,9 @@ const BarberDashboard = () => {
       <div className="filter-container">
         <div className="date-picker-wrapper">
           <label className="date-label">📅 Selecione a Data:</label>
-          <input 
-            type="date" 
-            value={selectedDate} 
+          <input
+            type="date"
+            value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
             className="date-picker-input"
           />
@@ -227,14 +296,14 @@ const BarberDashboard = () => {
 
         <div className="filter-button-group">
           {[
-            { id: 'pending', label: '⏳ Pendentes' },
-            { id: 'completed', label: '✅ Concluídos' },
-            { id: 'all', label: '📋 Todos' }
+            { id: "pending", label: "⏳ Pendentes" },
+            { id: "completed", label: "✅ Concluídos" },
+            { id: "all", label: "📋 Todos" },
           ].map((f) => (
             <button
               key={f.id}
               onClick={() => setFilter(f.id)}
-              className={`filter-button ${filter === f.id ? 'active' : ''}`}
+              className={`filter-button ${filter === f.id ? "active" : ""}`}
             >
               {f.label}
             </button>
@@ -252,9 +321,9 @@ const BarberDashboard = () => {
                 <span className={`status-tag ${getStatusClass(app.status)}`}>
                   {getStatusLabel(app.status)}
                 </span>
-                <button 
-                  onClick={() => handleDelete(app.id)} 
-                  className="btn-delete" 
+                <button
+                  onClick={() => handleDelete(app.id)}
+                  className="btn-delete"
                   title="Excluir permanentemente"
                 >
                   <Trash2 size={16} />
@@ -264,15 +333,13 @@ const BarberDashboard = () => {
               {/* Client Info */}
               <div className="card-title">
                 <User size={16} />
-                <span>{app.cliente_nome || 'Cliente'}</span>
+                <span>{app.cliente_nome || "Cliente"}</span>
               </div>
-              <p className="card-subtitle">{app.servico_nome || 'Serviço'}</p>
-              
+              <p className="card-subtitle">{app.servico_nome || "Serviço"}</p>
+
               {/* WhatsApp */}
               {app.cliente_whatsapp && (
-                <p className="card-whatsapp">
-                  📱 {app.cliente_whatsapp}
-                </p>
+                <p className="card-whatsapp">📱 {app.cliente_whatsapp}</p>
               )}
 
               {/* Date & Time */}
@@ -283,17 +350,11 @@ const BarberDashboard = () => {
                 </div>
                 <div className="card-info-item">
                   <Clock size={14} />
-                  <span className="time-bold">{app.horario_agendamento || '--:--'}</span>
+                  <span className="time-bold">
+                    {app.horario_agendamento || "--:--"}
+                  </span>
                 </div>
               </div>
-
-              {/* Notes */}
-              {app.observacoes && (
-                <div className="appointment-notes">
-                  <FileText size={12} />
-                  <span>{app.observacoes}</span>
-                </div>
-              )}
 
               {/* Price */}
               <div className="price-tag">
@@ -302,19 +363,21 @@ const BarberDashboard = () => {
               </div>
 
               {/* Actions */}
-              <div className={`card-actions ${app.status !== 'pending' ? 'disabled' : ''}`}>
-                {app.status === 'pending' ? (
+              <div
+                className={`card-actions ${app.status !== "pending" ? "disabled" : ""}`}
+              >
+                {app.status === "pending" ? (
                   <>
-                    <button 
-                      onClick={() => handleStatusChange(app.id, 'completed')} 
+                    <button
+                      onClick={() => handleStatusChange(app.id, "completed")}
                       className="btn-status btn-complete"
                       title="Marcar como concluído"
                     >
                       <CheckCircle size={14} />
                       <span>Concluir</span>
                     </button>
-                    <button 
-                      onClick={() => handleStatusChange(app.id, 'cancelled')} 
+                    <button
+                      onClick={() => handleStatusChange(app.id, "cancelled")}
                       className="btn-status btn-cancel"
                       title="Cancelar agendamento"
                     >
@@ -322,9 +385,9 @@ const BarberDashboard = () => {
                       <span>Cancelar</span>
                     </button>
                   </>
-                ) : app.status === 'completed' ? (
-                  <button 
-                    onClick={() => handleStatusChange(app.id, 'pending')} 
+                ) : app.status === "completed" ? (
+                  <button
+                    onClick={() => handleStatusChange(app.id, "pending")}
                     className="btn-status btn-pending"
                     title="Voltar para pendente"
                   >
@@ -332,8 +395,8 @@ const BarberDashboard = () => {
                     <span>Voltar para Pendente</span>
                   </button>
                 ) : (
-                  <button 
-                    onClick={() => handleStatusChange(app.id, 'pending')} 
+                  <button
+                    onClick={() => handleStatusChange(app.id, "pending")}
                     className="btn-status btn-pending"
                     title="Voltar para pendente"
                   >

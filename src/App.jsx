@@ -9,6 +9,8 @@ import PainelBarbeiro from './pages/PainelBarbeiro.jsx';
 import ValidacaoEmail from "./pages/ValidacaoEmail.jsx";
 import RedefinirSenhaUser from "./pages/RedefinirSenha.jsx";
 import MeusAgendamentos from "./pages/MeusAgendamentos.jsx";
+import FormBarber from "./pages/FormBarberDashboard.jsx";
+
 
 // 1. Importe o AuthProvider que criamos no passo anterior
 import { AuthProvider } from "./context/AuthContext.jsx";
@@ -27,6 +29,7 @@ function App() {
           <Route path="/validacao-email" element={<ValidacaoEmail/>} />
           <Route path="/redefinir-senha" element={<RedefinirSenhaUser/>}/>
           <Route path="/meus-agendamentos" element={<MeusAgendamentos/>}/>
+          <Route path="/agendamento-barbeiro" element={<FormBarber/>}/>
           
           {/* 3. AGORA PROTEGIDA: A pessoa só agenda se estiver logada */}
           <Route 
