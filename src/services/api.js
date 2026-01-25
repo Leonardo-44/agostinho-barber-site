@@ -1,10 +1,13 @@
 // src/services/api.js - FRONTEND
 // ✅ Configuração correta com variável de ambiente
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
+const API_URL = 
+  window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? "http://localhost:3001/api"
+    : "https://agostinho-barber-api.onrender.com/api";
 
 console.log("🔍 API_URL configurada:", API_URL);
-console.log("🌍 Ambiente:", import.meta.env.MODE);
+console.log("🌍 Hostname:", window.location.hostname);
 
 // ==================== FUNÇÃO BASE DE CHAMADA ====================
 
