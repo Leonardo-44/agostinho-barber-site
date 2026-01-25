@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Calendar, Clock, Scissors, Check, AlertCircle, Home, Loader } from "lucide-react";
-import { jwtDecode } from "jwt-decode";
 import "./FormAgendamento.css";
 
 const FormAgendamento = () => {
