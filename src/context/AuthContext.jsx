@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useContext } from 'react';
 
 // 1. Criamos o contexto
 export const AuthContext = createContext({});
@@ -6,39 +6,26 @@ export const AuthContext = createContext({});
 // 2. O Provedor (Provider)
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    // Tenta recuperar os dados salvos ao atualizar a página
-    const recoveredUser = localStorage.getItem('user');
-    const token = localStorage.getItem('authToken');
-
-    if (recoveredUser && token) {
-      try {
-        setUser(JSON.parse(recoveredUser));
-      } catch (error) {
-        console.error("Erro ao ler usuário do localStorage", error);
-      }
-    }
-    setLoading(false);
-  }, []);
-
-  const login = (userData, token) => {
-    localStorage.setItem('user', JSON.stringify(userData));
-    localStorage.setItem('authToken', token); // Usei authToken para bater com seu ProtectedRoute
+  const login = (userData, authToken) => {
+    console.log('✅ [AUTH] Usuário logado:', userData);
     setUser(userData);
+    setToken(authToken);
   };
 
   const logout = () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('authToken');
+    console.log('🚪 [AUTH] Logout realizado');
     setUser(null);
+    setToken(null);
   };
 
   return (
     <AuthContext.Provider value={{ 
       authenticated: !!user, 
       user, 
+      token,
       login, 
       logout, 
       loading 
@@ -48,7 +35,7 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-// 3. O Hook useAuth (Garanta que isso esteja no final do arquivo)
+// 3. O Hook useAuth
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
