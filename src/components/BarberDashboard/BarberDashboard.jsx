@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import "./BarberDashboard.css";
+import React, { useState, useEffect } from 'react';
+import './BarberDashboard.css';
 import { 
   Calendar, 
   Clock, 
@@ -9,88 +9,142 @@ import {
   User, 
   FileText, 
   AlertCircle,
-  Scissors
+  Scissors,
+  DollarSign,
+  Home
 } from 'lucide-react';
 
-const initialAppointments = [
-  {
-    id: 1,
-    clientName: "Carlos Eduardo",
-    service: "Corte Degradê + Barba",
-    date: "2025-12-31",
-    time: "14:30",
-    status: "pending",
-    notes: "Cliente pede para não baixar muito em cima. Urgente!"
-  },
-  {
-    id: 2,
-    clientName: "Roberto Justus",
-    service: "Barba Terapia",
-    date: "2025-12-30",
-    time: "15:00",
-    status: "completed",
-    notes: ""
-  },
-  {
-    id: 3,
-    clientName: "Manoel Gomes",
-    service: "Corte Simples",
-    date: "2025-12-30",
-    time: "16:00",
-    status: "pending",
-    notes: "Atraso de 10 min avisado. Ligar antes de iniciar."
-  },
-  {
-    id: 4,
-    clientName: "Maria Oliveira",
-    service: "Hidratação Capilar",
-    date: "2025-12-30",
-    time: "16:45",
-    status: "cancelled",
-    notes: "Cancelado pelo cliente ontem à noite."
-  },
-  {
-    id: 5,
-    clientName: "Wesley Cabrito",
-    service: "Corte Disfarçado",
-    date: "2026-01-10",
-    time: "16:45",
-    status: "pending",
-    notes: "Atraso de 10 min avisado. Ligar antes de iniciar."
-  }
-];
-
 const BarberDashboard = () => {
-  const [appointments, setAppointments] = useState(initialAppointments);
+  const [appointments, setAppointments] = useState([]);
   const [filter, setFilter] = useState('pending');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const handleStatusChange = (id, newStatus) => {
-    const updatedList = appointments.map(app => 
-      app.id === id ? { ...app, status: newStatus } : app
-    );
-    setAppointments(updatedList);
-  };
+  // ✅ Buscar agendamentos do backend
+  const fetchAppointments = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const token = localStorage.getItem("authToken");
+      
+      if (!token) {
+        setError('Você precisa estar logado');
+        setLoading(false);
+        return;
+      }
 
-  const handleDelete = (id) => {
-    if (window.confirm("Tem certeza que deseja APAGAR este agendamento?")) {
-      const updatedList = appointments.filter(app => app.id !== id);
-      setAppointments(updatedList);
+      const response = await fetch("http://localhost:3001/api/agendamentos/lista", {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setAppointments(data.agendamentos || []);
+      } else {
+        setError(data.error || 'Erro ao carregar agendamentos');
+      }
+    } catch (err) {
+      console.error("❌ Erro ao buscar agendamentos:", err);
+      setError('Erro ao conectar com o servidor');
+    } finally {
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchAppointments();
+    // Recarregar a cada 30 segundos
+    const interval = setInterval(fetchAppointments, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // ✅ Atualizar status do agendamento
+  const handleStatusChange = async (id, newStatus) => {
+    try {
+      const token = localStorage.getItem("authToken");
+      const response = await fetch(`http://localhost:3001/api/agendamentos/${id}/status`, {
+        method: "PUT",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (response.ok) {
+        setAppointments(prev => prev.map(app => 
+          app.id === id ? { ...app, status: newStatus } : app
+        ));
+      } else {
+        setError('Erro ao atualizar status');
+      }
+    } catch (err) {
+      console.error("❌ Erro ao atualizar status:", err);
+      setError('Erro ao atualizar status');
+    }
+  };
+
+  // ✅ Deletar agendamento
+  const handleDelete = async (id) => {
+    if (!window.confirm("Deseja apagar este registro permanentemente?")) return;
+
+    try {
+      const token = localStorage.getItem("authToken");
+      const response = await fetch(`http://localhost:3001/api/agendamentos/${id}/cancelar`, {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        setAppointments(prev => prev.filter(app => app.id !== id));
+      } else {
+        setError('Erro ao deletar agendamento');
+      }
+    } catch (err) {
+      console.error("❌ Erro ao deletar:", err);
+      setError('Erro ao deletar agendamento');
+    }
+  };
+
+  // ✅ Filtrar agendamentos por data e status
   const filteredAppointments = appointments.filter(app => {
-    if (filter === 'all') {
-      return app.date === selectedDate;
-    }
-    return app.status === filter && app.date === selectedDate;
+    const appDate = app.data_agendamento 
+      ? new Date(app.data_agendamento).toISOString().split('T')[0] 
+      : "";
+    
+    const matchesDate = appDate === selectedDate;
+    const matchesFilter = filter === 'all' || app.status === filter;
+    
+    return matchesDate && matchesFilter;
   });
 
+  // ✅ Calcular estatísticas
+  const stats = {
+    pending: appointments.filter(a => a.status === 'pending').length,
+    completed: appointments.filter(a => a.status === 'completed').length,
+    totalToday: appointments
+      .filter(a => a.status === 'completed' && 
+        (a.data_agendamento ? new Date(a.data_agendamento).toISOString().split('T')[0] : "") === selectedDate)
+      .reduce((acc, curr) => acc + (Number(curr.valor_total) || 0), 0)
+  };
+
+  // ✅ Helpers
   const getStatusClass = (status) => {
     switch (status) {
       case 'completed': return 'status-completed';
       case 'cancelled': return 'status-cancelled';
       default: return 'status-pending';
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "--/--/--";
+    try {
+      return new Date(dateString).toLocaleDateString('pt-BR');
+    } catch {
+      return "--/--/--";
     }
   };
 
@@ -102,101 +156,93 @@ const BarberDashboard = () => {
     }
   };
 
-  const stats = {
-    pending: appointments.filter(a => a.status === 'pending').length,
-    completed: appointments.filter(a => a.status === 'completed').length,
-    cancelled: appointments.filter(a => a.status === 'cancelled').length,
-  };
+  if (loading) {
+    return (
+      <div className="loading-screen">
+        <div className="loading-spinner"></div>
+        <p>Carregando painel de controle...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard-container">
-      {/* Header */}
+      {/* HEADER */}
       <header className="dashboard-header">
-        <div className="logo-icon">
-          <Scissors size={40} />
+        <button 
+          onClick={() => window.history.back()}
+          className="btn-home"
+          title="Voltar"
+        >
+          <Home size={28} />
+        </button>
+        
+        <div className="header-content">
+          <div className="logo-icon">
+            <Scissors size={40} />
+          </div>
+          <div>
+            <h1>Painel do <span>Barbeiro</span></h1>
+            <p>Gestão de Clientes e Serviços</p>
+          </div>
         </div>
-        <h1>
-          Painel do <span>Barbeiro</span>
-        </h1>
-        <p>Gerencie os agendamentos de hoje</p>
       </header>
 
-      {/* Stats Cards */}
+      {/* ERROR BANNER */}
+      {error && (
+        <div className="error-banner">
+          <AlertCircle size={18} />
+          <p>{error}</p>
+          <button onClick={() => setError('')} className="error-close">&times;</button>
+        </div>
+      )}
+
+      {/* STATS */}
       <div className="stats-grid">
         <div className="stat-card">
-          <p className="stat-label">Pendentes</p>
-          <p className="stat-value" style={{ color: '#f59e0b' }}>{stats.pending}</p>
+          <p className="stat-label">⏳ Pendentes</p>
+          <p className="stat-value stat-pending">{stats.pending}</p>
         </div>
         <div className="stat-card">
-          <p className="stat-label">Concluídos</p>
-          <p className="stat-value" style={{ color: '#22c55e' }}>{stats.completed}</p>
+          <p className="stat-label">✅ Concluídos</p>
+          <p className="stat-value stat-completed">{stats.completed}</p>
         </div>
         <div className="stat-card">
-          <p className="stat-label">Cancelados</p>
-          <p className="stat-value" style={{ color: '#ef4444' }}>{stats.cancelled}</p>
+          <p className="stat-label">💰 Faturamento</p>
+          <p className="stat-value stat-revenue">R$ {stats.totalToday.toFixed(2)}</p>
         </div>
       </div>
 
-      {/* Filtros */}
+      {/* FILTROS */}
       <div className="filter-container">
+        <div className="date-picker-wrapper">
+          <label className="date-label">📅 Selecione a Data:</label>
+          <input 
+            type="date" 
+            value={selectedDate} 
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="date-picker-input"
+          />
+        </div>
+
         <div className="filter-button-group">
-          {["pending", "completed", "cancelled", "all"].map((f) => (
+          {[
+            { id: 'pending', label: '⏳ Pendentes' },
+            { id: 'completed', label: '✅ Concluídos' },
+            { id: 'all', label: '📋 Todos' }
+          ].map((f) => (
             <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`filter-button ${filter === f ? 'active' : ''}`}
+              key={f.id}
+              onClick={() => setFilter(f.id)}
+              className={`filter-button ${filter === f.id ? 'active' : ''}`}
             >
-              {f === "all"
-                ? "Todos"
-                : f === "pending"
-                ? "Pendentes"
-                : f === "completed"
-                ? "Concluídos"
-                : "Cancelados"}
+              {f.label}
             </button>
           ))}
         </div>
-        
-        {/* Calendário para filtro "Todos" */}
-        {filter === "all" && (
-          <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center' }}>
-            <div style={{ 
-              backgroundColor: '#292524', 
-              border: '1px solid #44403c',
-              borderRadius: '0.75rem',
-              padding: '1rem',
-              maxWidth: '320px'
-            }}>
-              <label style={{ 
-                display: 'block',
-                marginBottom: '0.5rem',
-                fontSize: '0.875rem',
-                fontWeight: '600',
-                color: '#d1d5db'
-              }}>
-                Selecione a data:
-              </label>
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '0.5rem',
-                  backgroundColor: '#1c1a19',
-                  border: '1px solid #44403c',
-                  borderRadius: '0.5rem',
-                  color: '#f3f4f6',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem'
-                }}
-              />
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Grid de Agendamentos */}
+      {/* APPOINTMENTS GRID */}
       <div className="appointments-grid">
         {filteredAppointments.length > 0 ? (
           filteredAppointments.map((app) => (
@@ -206,98 +252,107 @@ const BarberDashboard = () => {
                 <span className={`status-tag ${getStatusClass(app.status)}`}>
                   {getStatusLabel(app.status)}
                 </span>
-                <button
-                  onClick={() => handleDelete(app.id)}
-                  className="btn-delete"
-                  disabled={app.status === "completed"}
-                  title="Deletar"
+                <button 
+                  onClick={() => handleDelete(app.id)} 
+                  className="btn-delete" 
+                  title="Excluir permanentemente"
                 >
-                  <Trash2 size={18} />
+                  <Trash2 size={16} />
                 </button>
               </div>
 
               {/* Client Info */}
               <div className="card-title">
-                <User size={18} />
-                {app.clientName}
+                <User size={16} />
+                <span>{app.cliente_nome || 'Cliente'}</span>
               </div>
-              <p className="card-subtitle">{app.service}</p>
+              <p className="card-subtitle">{app.servico_nome || 'Serviço'}</p>
+              
+              {/* WhatsApp */}
+              {app.cliente_whatsapp && (
+                <p className="card-whatsapp">
+                  📱 {app.cliente_whatsapp}
+                </p>
+              )}
 
-              {/* Date and Time */}
+              {/* Date & Time */}
               <div className="card-info">
                 <div className="card-info-item">
-                  <Calendar size={16} />
-                  <span>{app.date.split("-").reverse().join("/")}</span>
+                  <Calendar size={14} />
+                  <span>{formatDate(app.data_agendamento)}</span>
                 </div>
                 <div className="card-info-item">
-                  <Clock size={16} />
-                  <span className="font-bold">{app.time}</span>
+                  <Clock size={14} />
+                  <span className="time-bold">{app.horario_agendamento || '--:--'}</span>
                 </div>
               </div>
 
               {/* Notes */}
-              {app.notes && (
+              {app.observacoes && (
                 <div className="appointment-notes">
-                  <FileText size={14} style={{ display: "inline", marginRight: "5px" }} />
-                  {app.notes}
+                  <FileText size={12} />
+                  <span>{app.observacoes}</span>
                 </div>
               )}
 
+              {/* Price */}
+              <div className="price-tag">
+                <DollarSign size={14} />
+                <span>R$ {Number(app.valor_total || 0).toFixed(2)}</span>
+              </div>
+
               {/* Actions */}
-              {app.status !== "cancelled" ? (
-                <div className="card-actions">
-                  {app.status !== "completed" && (
-                    <button
-                      onClick={() => handleStatusChange(app.id, "completed")}
+              <div className={`card-actions ${app.status !== 'pending' ? 'disabled' : ''}`}>
+                {app.status === 'pending' ? (
+                  <>
+                    <button 
+                      onClick={() => handleStatusChange(app.id, 'completed')} 
                       className="btn-status btn-complete"
+                      title="Marcar como concluído"
                     >
-                      <CheckCircle size={16} />
-                      <span className="hidden sm:inline">Concluir</span>
+                      <CheckCircle size={14} />
+                      <span>Concluir</span>
                     </button>
-                  )}
-                  {app.status !== "pending" && (
-                    <button
-                      onClick={() => handleStatusChange(app.id, "pending")}
-                      className="btn-status btn-pending"
+                    <button 
+                      onClick={() => handleStatusChange(app.id, 'cancelled')} 
+                      className="btn-status btn-cancel"
+                      title="Cancelar agendamento"
                     >
-                      <Clock size={16} />
-                      <span className="hidden sm:inline">Pendente</span>
+                      <XCircle size={14} />
+                      <span>Cancelar</span>
                     </button>
-                  )}
-                  <button
-                    onClick={() => handleStatusChange(app.id, "cancelled")}
-                    className="btn-status btn-delete-action"
-                    title="Cancelar"
+                  </>
+                ) : app.status === 'completed' ? (
+                  <button 
+                    onClick={() => handleStatusChange(app.id, 'pending')} 
+                    className="btn-status btn-pending"
+                    title="Voltar para pendente"
                   >
-                    <XCircle size={16} />
+                    <Clock size={14} />
+                    <span>Voltar para Pendente</span>
                   </button>
-                </div>
-              ) : (
-                <div className="card-actions cancelled">
-                  Serviço Cancelado
-                </div>
-              )}
+                ) : (
+                  <button 
+                    onClick={() => handleStatusChange(app.id, 'pending')} 
+                    className="btn-status btn-pending"
+                    title="Voltar para pendente"
+                  >
+                    <Clock size={14} />
+                    <span>Voltar para Pendente</span>
+                  </button>
+                )}
+              </div>
             </div>
           ))
         ) : (
-          /* Empty State */
-          <div style={{ gridColumn: "1 / -1" }}>
-            <div className="empty-state">
-              <AlertCircle size={48} />
-              <p>Nenhum agendamento encontrado para este filtro.</p>
-            </div>
+          <div className="empty-state">
+            <AlertCircle size={48} />
+            <p>Nenhum agendamento encontrado para este dia ou filtro.</p>
+            <button onClick={fetchAppointments} className="btn-retry">
+              Tentar novamente
+            </button>
           </div>
         )}
-      </div>
-
-      {/* Botão Voltar */}
-      <div className="btn-back-container">
-        <button
-          onClick={() => window.history.back()}
-          className="btn-back"
-        >
-          ← Voltar
-        </button>
       </div>
     </div>
   );

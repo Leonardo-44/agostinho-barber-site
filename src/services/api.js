@@ -111,6 +111,17 @@ export const loginClient = async (credentials) => {
   });
 };
 
+// ✅ NOVO: Buscar dados do cliente logado
+export const fetchClienteLogado = async (token) => {
+  console.log("👤 [CLIENTE] Buscando dados do cliente logado");
+  return apiCall("/clientes/perfil", {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
 // ==================== EMAIL ====================
 
 export const verifyEmailCode = async (email, code) => {
@@ -129,19 +140,16 @@ export const resendEmailCode = async (email) => {
   });
 };
 
-// ==================== SENHA-FIM ====================
+// ==================== SENHA ====================
 
-// NOVA FUNÇÃO 1: Solicita o link de redefinição por e-mail
 export const requestPasswordReset = async (email) => {
   console.log("📧 [RESET] Solicitando redefinição de senha para:", email);
   return apiCall("/auth/password/forgot", {
-    // <--- NOVO ENDPOINT!
     method: "POST",
     body: JSON.stringify({ email }),
   });
 };
 
-// NOVA FUNÇÃO 2: Executa a redefinição de senha com o token
 export const resetPassword = async (token, newPassword, confirmPassword) => {
   console.log("🔑 [RESET] Redefinindo senha com token. Senhas: ***");
   const payload = {
@@ -151,9 +159,24 @@ export const resetPassword = async (token, newPassword, confirmPassword) => {
   };
 
   return apiCall("/auth/password/reset", {
-    // <--- NOVO ENDPOINT!
     method: "POST",
     body: JSON.stringify(payload),
+  });
+};
+
+// ==================== SERVIÇOS ✅ ====================
+
+export const fetchServicos = async () => {
+  console.log("🔧 [SERVICOS] Buscando todos os serviços");
+  return apiCall("/servicos", {
+    method: "GET",
+  });
+};
+
+export const fetchServicoById = async (servicoId) => {
+  console.log("🔧 [SERVICOS] Buscando serviço:", servicoId);
+  return apiCall(`/servicos/${servicoId}`, {
+    method: "GET",
   });
 };
 
@@ -162,7 +185,7 @@ export const resetPassword = async (token, newPassword, confirmPassword) => {
 export const fetchAdminDashboard = async (adminToken) => {
   console.log("👑 [ADMIN] Buscando dashboard");
   return apiCall("/admin/dashboard", {
-    method: "GET", // ⚠️ CORRIGIDO: Dashboard geralmente é GET, não POST
+    method: "GET",
     headers: {
       Authorization: `Bearer ${adminToken}`,
     },
@@ -172,7 +195,7 @@ export const fetchAdminDashboard = async (adminToken) => {
 export const fetchAllClients = async (adminToken) => {
   console.log("👥 [ADMIN] Buscando todos os clientes");
   return apiCall("/admin/clientes", {
-    method: "GET", // ⚠️ CORRIGIDO: Buscar dados geralmente é GET, não POST
+    method: "GET",
     headers: {
       Authorization: `Bearer ${adminToken}`,
     },
@@ -182,7 +205,7 @@ export const fetchAllClients = async (adminToken) => {
 export const deleteClient = async (clientId, adminToken) => {
   console.log("🗑️ [ADMIN] Deletando cliente:", clientId);
   return apiCall(`/admin/clientes/${clientId}`, {
-    method: "DELETE", // ⚠️ CORRIGIDO: Usar DELETE ao invés de POST com /delete
+    method: "DELETE",
     headers: {
       Authorization: `Bearer ${adminToken}`,
     },
@@ -192,8 +215,8 @@ export const deleteClient = async (clientId, adminToken) => {
 export const updateClientRole = async (clientId, newRole, adminToken) => {
   console.log("🔄 [ADMIN] Atualizando role do cliente:", { clientId, newRole });
   return apiCall(`/admin/clientes/${clientId}/role`, {
-    method: "PUT", // ⚠️ CORRIGIDO: Usar PUT para atualização ao invés de POST
-    body: JSON.stringify({ role: newRole }), // ⚠️ CORRIGIDO: propriedade 'role' ao invés de 'newRole'
+    method: "PUT",
+    body: JSON.stringify({ role: newRole }),
     headers: {
       Authorization: `Bearer ${adminToken}`,
     },
@@ -205,10 +228,13 @@ export const updateClientRole = async (clientId, newRole, adminToken) => {
 export default {
   registerClient,
   loginClient,
+  fetchClienteLogado,
   verifyEmailCode,
   resendEmailCode,
   requestPasswordReset,
   resetPassword,
+  fetchServicos,
+  fetchServicoById,
   fetchAdminDashboard,
   fetchAllClients,
   deleteClient,
