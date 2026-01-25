@@ -1,7 +1,9 @@
 // src/services/api.js - FRONTEND
-// ⚠️ IMPORTANTE: Verifique se a porta está correta!
+// ✅ Configuração correta com variável de ambiente
 
-const API_URL = "http://localhost:3001/api"; // ✅ Backend roda na porta 3001
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
+
+console.log("🔍 API_URL configurada:", API_URL);
 
 // ==================== FUNÇÃO BASE DE CHAMADA ====================
 
@@ -59,7 +61,7 @@ export const apiCall = async (endpoint, options = {}) => {
     if (error.message === "Failed to fetch" || error.name === "TypeError") {
       throw {
         error:
-          "🔴 Não foi possível conectar ao servidor. Verifique se o backend está rodando na porta 3001.",
+          "🔴 Não foi possível conectar ao servidor. Verifique se o backend está rodando.",
         details: "ERR_CONNECTION_REFUSED",
       };
     }
