@@ -3,7 +3,7 @@
 const API_URL = 
   window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? "http://localhost:3001/api"
-    : "https://agostinho-barber-site-backend.onrender.com/api";
+    : "https://agostinho-barber-site-backend.onrender.com";
 
 console.log("🔍 API_URL configurada:", API_URL);
 
