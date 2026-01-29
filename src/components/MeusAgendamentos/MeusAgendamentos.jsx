@@ -19,25 +19,42 @@ const MeusAgendamentos = () => {
   const fetchMeusAgendamentos = async () => {
     try {
       setLoading(true);
+      setError('');
       const token = localStorage.getItem("authToken");
       if (!token) {
-        setError('Você precisa estar logado');
+        setError('❌ Você precisa estar logado');
         setLoading(false);
         return;
       }
 
       const response = await fetch("http://localhost:3001/api/agendamentos/cliente/meus", {
-        headers: { "Authorization": `Bearer ${token}` }
+        headers: { 
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
       });
 
-      const data = await response.json();
-      if (data.success) {
-        setAgendamentos(data.agendamentos || []);
+      if (response.status === 403) {
+        console.warn("⚠️ Token inválido ou expirado");
+        localStorage.removeItem("authToken");
+        setError('❌ Sua sessão expirou. Por favor, faça login novamente.');
+        setLoading(false);
+        return;
+      }
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setAgendamentos(data.agendamentos || []);
+        } else {
+          setError('❌ ' + (data.error || 'Erro ao carregar agendamentos'));
+        }
       } else {
-        setError(data.error || 'Erro ao carregar agendamentos');
+        setError('❌ Erro ao conectar com o servidor');
       }
     } catch (err) {
-      setError('Erro ao conectar com o servidor');
+      console.error("Erro ao buscar agendamentos:", err);
+      setError('❌ Erro ao conectar com o servidor');
     } finally {
       setLoading(false);
     }
@@ -52,6 +69,12 @@ const MeusAgendamentos = () => {
 
     try {
       const token = localStorage.getItem("authToken");
+      
+      if (!token) {
+        setError('❌ Você precisa estar logado');
+        return;
+      }
+
       const response = await fetch(`http://localhost:3001/api/agendamentos/cliente/${id}/cancelar`, {
         method: "PUT", 
         headers: { 
@@ -60,16 +83,26 @@ const MeusAgendamentos = () => {
         }
       });
 
+      if (response.status === 403) {
+        console.warn("⚠️ Token inválido ou expirado");
+        localStorage.removeItem("authToken");
+        setError('❌ Sua sessão expirou. Por favor, faça login novamente.');
+        return;
+      }
+
       if (response.ok) {
         setAgendamentos(prev => prev.map(a => 
           a.id === id ? { ...a, status: 'cancelled' } : a
         ));
-        alert("Agendamento cancelado com sucesso!");
+        setError('');
+        alert("✅ Agendamento cancelado com sucesso!");
       } else {
-        setError('Erro ao cancelar agendamento');
+        const data = await response.json();
+        setError('❌ ' + (data.error || 'Erro ao cancelar agendamento'));
       }
     } catch (err) {
-      setError('Erro ao conectar com o servidor');
+      console.error("Erro ao cancelar agendamento:", err);
+      setError('❌ Erro ao conectar com o servidor');
     }
   };
 
@@ -101,56 +134,98 @@ const MeusAgendamentos = () => {
     return status;
   };
 
-  if (loading) return <div className="loading-screen"><Loader className="spin" /></div>;
+  if (loading) return (
+    <div className="loading-screen">
+      <Loader className="spin" size={48} />
+      <p>Carregando agendamentos...</p>
+    </div>
+  );
 
   return (
     <div className="agendamentos-container">
       <header className="agendamentos-header">
-        <button onClick={() => window.history.back()} className="btn-voltar"><Home size={24} /></button>
+        <button onClick={() => window.history.back()} className="btn-voltar" title="Voltar">
+          <Home size={24} />
+        </button>
         <h1>Meus Agendamentos</h1>
       </header>
 
-      <div className="filtros-container">
-        {['all', 'pending', 'completed', 'cancelled'].map(f => (
-          <button key={f} onClick={() => setFilter(f)} className={`filtro-btn ${filter === f ? 'ativo' : ''}`}>
-            {f === 'all' ? 'Todos' : getStatusLabel(f)}
+      {error && (
+        <div className="error-alert">
+          <AlertCircle size={20} />
+          <span>{error}</span>
+          <button
+            className="error-close"
+            onClick={() => setError('')}
+            aria-label="Fechar alerta"
+          >
+            ×
           </button>
-        ))}
-      </div>
+        </div>
+      )}
 
-      <div className="agendamentos-lista">
-        {agendamentosOrdenados.map(agendamento => (
-          <div key={agendamento.id} className="agendamento-item">
-            <div className="item-header">
-              <span className={`status-badge ${agendamento.status?.toLowerCase()}`}>
-                {getStatusLabel(agendamento.status)}
-              </span>
-            </div>
-
-            <div className="item-servico">
-              <Scissors size={18} />
-              <p>{agendamento.servico_nome}</p>
-            </div>
-
-            <div className="item-info">
-              <span><Calendar size={14} /> {formatDate(agendamento.data_agendamento)}</span>
-              <span><Clock size={14} /> {agendamento.horario_agendamento}</span>
-            </div>
-
-            <div className="item-acoes">
-              {/* ✅ MUDANÇA AQUI: Aceita 'pending' ou 'Pendente' */}
-              {(compararStatus(agendamento.status, 'pending')) && (
-                <button
-                  onClick={() => handleCancelAgendamento(agendamento.id)}
-                  className="btn-cancelar"
-                >
-                  <Trash2 size={16} /> Cancelar Corte
-                </button>
-              )}
-            </div>
+      {agendamentos.length > 0 ? (
+        <>
+          <div className="filtros-container">
+            {['all', 'pending', 'completed', 'cancelled'].map(f => (
+              <button 
+                key={f} 
+                onClick={() => setFilter(f)} 
+                className={`filtro-btn ${filter === f ? 'ativo' : ''}`}
+              >
+                {f === 'all' ? 'Todos' : getStatusLabel(f)}
+              </button>
+            ))}
           </div>
-        ))}
-      </div>
+
+          <div className="agendamentos-lista">
+            {agendamentosOrdenados.length > 0 ? (
+              agendamentosOrdenados.map(agendamento => (
+                <div key={agendamento.id} className="agendamento-item">
+                  <div className="item-header">
+                    <span className={`status-badge ${agendamento.status?.toLowerCase()}`}>
+                      {getStatusLabel(agendamento.status)}
+                    </span>
+                  </div>
+
+                  <div className="item-servico">
+                    <Scissors size={18} />
+                    <p>{agendamento.servico_nome}</p>
+                  </div>
+
+                  <div className="item-info">
+                    <span><Calendar size={14} /> {formatDate(agendamento.data_agendamento)}</span>
+                    <span><Clock size={14} /> {agendamento.horario_agendamento}</span>
+                  </div>
+
+                  <div className="item-acoes">
+                    {/* ✅ MUDANÇA AQUI: Aceita 'pending' ou 'Pendente' */}
+                    {(compararStatus(agendamento.status, 'pending')) && (
+                      <button
+                        onClick={() => handleCancelAgendamento(agendamento.id)}
+                        className="btn-cancelar"
+                      >
+                        <Trash2 size={16} /> Cancelar Corte
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="no-agendamentos">
+                <AlertCircle size={48} />
+                <p>Nenhum agendamento encontrado para este filtro.</p>
+              </div>
+            )}
+          </div>
+        </>
+      ) : (
+        <div className="no-agendamentos">
+          <AlertCircle size={48} />
+          <p>Você ainda não possui agendamentos.</p>
+          <p className="subtitle">Clique em "Agendar" para criar seu primeiro agendamento!</p>
+        </div>
+      )}
     </div>
   );
 };

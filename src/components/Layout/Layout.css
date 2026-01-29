@@ -1,7 +1,12 @@
 /*APRESENTATION*/
 
 .fundo-apresentation {
-  background: linear-gradient(rgb(0, 0, 0, 0.6)), url(../../public/fundo.jpg);
+  background: #a86a12;
+  background: radial-gradient(
+    circle,
+    rgb(85, 43, 3) 15%,
+    rgb(32, 18, 10) 100%
+  );
   background-size: cover;
   background-position: center;
   position: static;
@@ -47,13 +52,13 @@
 }
 
 /*CONTATO*/
-.fundo-contato{
+.fundo-contato {
   height: 385px;
   background-color: var(--bg-contato);
   margin: 0 auto;
 }
 
-.fundo-contato > div > div > h2{
+.fundo-contato > div > div > h2 {
   font-size: 32px;
   font-weight: 500;
 }
@@ -77,17 +82,17 @@
   border-radius: 5px;
 }
 
-.card-contato > div > div > h4{
+.card-contato > div > div > h4 {
   font-weight: 500;
 }
 
-.card-contato > div > p{
+.card-contato > div > p {
   color: var(--text-gray);
   font-size: 13px;
 }
 
 .margin-h2 {
-  padding: 16px 0 36px 0 ;
+  padding: 16px 0 36px 0;
 }
 
 /*RESPONSIVIDADE*/
@@ -98,7 +103,7 @@
     padding: 0.8rem;
   }
 
-  .fundo-contato{
+  .fundo-contato {
     height: auto;
     padding: 0 0 2em 0;
   }
@@ -122,47 +127,48 @@
 }
 
 @media (max-width: 834px) {
-    .card-diferenciais {
+  .card-diferenciais {
     width: 148px;
     height: 118px;
     padding: 0.8rem;
   }
 
-  .fundo-logo-diferenciais, .fundo-logo-contato{
+  .fundo-logo-diferenciais,
+  .fundo-logo-contato {
     width: 28px;
     height: 28px;
   }
 
-  .fundo-logo-diferenciais > img, .fundo-logo-contato > img{
+  .fundo-logo-diferenciais > img,
+  .fundo-logo-contato > img {
     width: 18px;
   }
 
-  .fundo-logo-redes{
+  .fundo-logo-redes {
     width: 28px;
     height: 28px;
   }
 
-  .fundo-logo-redes> a > img{
+  .fundo-logo-redes > a > img {
     width: 22px;
   }
 
-  .card-contato{
+  .card-contato {
     width: 200px;
     height: 118px;
   }
 
-  .card-contato > div > p{
-  font-size: 11px;
-}
+  .card-contato > div > p {
+    font-size: 11px;
+  }
 
   .card-diferenciais > div > div > h4 {
-  font-size: 9px;
+    font-size: 9px;
   }
 
   .card-diferenciais > div > div > p {
-  font-size: 6px;
-}
-
+    font-size: 6px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -178,7 +184,7 @@
     width: 20px;
   }
 
-  .fundo-diferenciais > .container{
+  .fundo-diferenciais > .container {
     padding: 0 1rem;
   }
 }
@@ -196,7 +202,7 @@
     height: 60vh;
   }
 
-  .fundo-diferenciais > .container{
+  .fundo-diferenciais > .container {
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -212,7 +218,7 @@
     justify-content: center;
   }
 
-  .card-contato{
+  .card-contato {
     width: 148px;
     height: 118px;
     padding: 0.8rem;
@@ -223,9 +229,8 @@
   }
 
   .card-contato > div > div > h4 {
-  font-size: 10px;
-
-}
+    font-size: 10px;
+  }
 }
 @media (max-width: 380px) {
   .fundo-apresentation > h1 {

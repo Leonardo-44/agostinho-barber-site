@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Calendar,
   Clock,
@@ -11,6 +12,9 @@ import {
 import "./FormAgendamento.css";
 
 const FormAgendamento = () => {
+
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     data: "",
     horario: "",
@@ -44,24 +48,43 @@ const FormAgendamento = () => {
       try {
         setLoadingServicos(true);
         const token = localStorage.getItem("authToken");
+        
+        // Buscar dados do perfil se houver token
         if (token) {
           const response = await fetch(
             "http://localhost:3001/api/clientes/perfil",
             {
-              headers: { Authorization: `Bearer ${token}` },
+              headers: { 
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json"
+              },
             },
           );
-          if (response.ok) {
+          
+          if (response.status === 403) {
+            console.warn("⚠️ Token inválido ou expirado");
+            localStorage.removeItem("authToken");
+            setError("❌ Sua sessão expirou. Por favor, faça login novamente.");
+          } else if (response.ok) {
             const data = await response.json();
             const nomeCompleto =
               `${data.cliente?.nome || ""} ${data.cliente?.sobrenome || ""}`.trim();
             setUsuarioNome(nomeCompleto || "Cliente App");
           }
         }
+        
+        // Buscar serviços (não requer autenticação)
         const resServicos = await fetch("http://localhost:3001/api/servicos");
-        const dataServicos = await resServicos.json();
-        if (dataServicos.success) setServicos(dataServicos.servicos);
+        
+        if (resServicos.status === 403) {
+          console.error("❌ Acesso negado ao buscar serviços");
+          setError("❌ Erro de permissão ao carregar serviços");
+        } else if (resServicos.ok) {
+          const dataServicos = await resServicos.json();
+          if (dataServicos.success) setServicos(dataServicos.servicos);
+        }
       } catch (err) {
+        console.error("Erro ao buscar dados:", err);
         setError("❌ Erro ao conectar com o servidor");
       } finally {
         setLoadingServicos(false);
@@ -75,9 +98,18 @@ const FormAgendamento = () => {
       const response = await fetch(
         `http://localhost:3001/api/agendamentos/ocupados?data=${data}`,
       );
-      const data_resp = await response.json();
-      if (data_resp.success)
-        setAgendamentosOcupados(data_resp.agendamentos || []);
+      
+      if (response.status === 403) {
+        console.warn("⚠️ Acesso negado ao buscar agendamentos");
+        setError("❌ Erro de permissão ao carregar horários");
+        return;
+      }
+      
+      if (response.ok) {
+        const data_resp = await response.json();
+        if (data_resp.success)
+          setAgendamentosOcupados(data_resp.agendamentos || []);
+      }
     } catch (err) {
       console.error("Erro ao buscar horários:", err);
     }
@@ -86,21 +118,70 @@ const FormAgendamento = () => {
   const getHorariosDisponiveis = (data) => {
     if (!data) return [];
     const diaDaSemana = new Date(data.replace(/-/g, "/")).getDay();
-    if (diaDaSemana === 1) return [];
+    
+    // Domingo (0) e Segunda (1) - Fechado
+    if (diaDaSemana === 0 || diaDaSemana === 1) return [];
+    
     let horarios = [];
-    const horaInicio = diaDaSemana === 0 ? 8 : 7;
-    const horaFim = diaDaSemana === 0 ? 12 : 21;
-    let totalMinutos = horaInicio * 60;
-    while (totalMinutos < horaFim * 60) {
-      const h = String(Math.floor(totalMinutos / 60)).padStart(2, "0");
-      const m = String(totalMinutos % 60).padStart(2, "0");
-      const horario = `${h}:${m}`;
-      const ocupado = agendamentosOcupados.some((a) =>
-        a.horario_agendamento?.startsWith(horario),
-      );
-      if (!ocupado) horarios.push(horario);
-      totalMinutos += 50;
+    
+    // Terça (2), Quarta (3), Quinta (4)
+    if (diaDaSemana >= 2 && diaDaSemana <= 4) {
+      // Período da manhã: 7h até 11:10 (último corte)
+      let totalMinutos = 7 * 60; // 7:00
+      while (totalMinutos <= 11 * 60 + 10) { // 11:10
+        const h = String(Math.floor(totalMinutos / 60)).padStart(2, "0");
+        const m = String(totalMinutos % 60).padStart(2, "0");
+        const horario = `${h}:${m}`;
+        const ocupado = agendamentosOcupados.some((a) =>
+          a.horario_agendamento?.startsWith(horario),
+        );
+        if (!ocupado) horarios.push(horario);
+        totalMinutos += 50;
+      }
+      
+      // Período da tarde: 13h até 19h (último corte)
+      totalMinutos = 13 * 60; // 13:00
+      while (totalMinutos < 19 * 60) { // Até 19:00
+        const h = String(Math.floor(totalMinutos / 60)).padStart(2, "0");
+        const m = String(totalMinutos % 60).padStart(2, "0");
+        const horario = `${h}:${m}`;
+        const ocupado = agendamentosOcupados.some((a) =>
+          a.horario_agendamento?.startsWith(horario),
+        );
+        if (!ocupado) horarios.push(horario);
+        totalMinutos += 50;
+      }
     }
+    
+    // Sexta (5) e Sábado (6)
+    if (diaDaSemana === 5 || diaDaSemana === 6) {
+      // Período da manhã: 7h até 11:10 (último corte)
+      let totalMinutos = 7 * 60; // 7:00
+      while (totalMinutos <= 11 * 60 + 10) { // 11:10
+        const h = String(Math.floor(totalMinutos / 60)).padStart(2, "0");
+        const m = String(totalMinutos % 60).padStart(2, "0");
+        const horario = `${h}:${m}`;
+        const ocupado = agendamentosOcupados.some((a) =>
+          a.horario_agendamento?.startsWith(horario),
+        );
+        if (!ocupado) horarios.push(horario);
+        totalMinutos += 50;
+      }
+      
+      // Período da tarde: 13h até 21:50 (último corte)
+      totalMinutos = 13 * 60; // 13:00
+      while (totalMinutos <= 21 * 60 + 50) { // 21:50
+        const h = String(Math.floor(totalMinutos / 60)).padStart(2, "0");
+        const m = String(totalMinutos % 60).padStart(2, "0");
+        const horario = `${h}:${m}`;
+        const ocupado = agendamentosOcupados.some((a) =>
+          a.horario_agendamento?.startsWith(horario),
+        );
+        if (!ocupado) horarios.push(horario);
+        totalMinutos += 50;
+      }
+    }
+    
     return horarios;
   };
 
@@ -136,79 +217,85 @@ const FormAgendamento = () => {
   };
 
   const handleSubmit = async () => {
-  if (!formData.data || !formData.horario || !formData.servico) {
-    setError("❌ Preencha todos os campos obrigatórios!");
-    return;
-  }
-
-  setLoading(true);
-  setError("");
-
-  try {
-    const token = localStorage.getItem("authToken");
-    if (!token) {
-      setError("❌ Você precisa estar logado");
-      setLoading(false);
+    if (!formData.data || !formData.horario || !formData.servico) {
+      setError("❌ Preencha todos os campos obrigatórios!");
       return;
     }
 
-    // 1. Encontra o serviço selecionado
-    const servicoSelecionado = servicos.find(
-      (s) => s.id === parseInt(formData.servico),
-    );
+    setLoading(true);
+    setError("");
 
-    // 2. Gera a string de adicionais (Resolvendo o erro da variável inexistente)
-    const nomesAdicionais = formData.adicionais
-      .map(id => adicionais.find(a => a.id === id)?.nome)
-      .filter(Boolean)
-      .join(", ");
+    try {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        setError("❌ Você precisa estar logado");
+        setLoading(false);
+        return;
+      }
 
-    const payload = {
-      servico_id: parseInt(formData.servico),
-      // Ajustado para 'nome_servico' (como no seu banco) ou 'nome' como fallback
-      servico_nome: servicoSelecionado?.nome_servico || servicoSelecionado?.nome || "Serviço", 
-      data_agendamento: formData.data,
-      horario_agendamento: formData.horario,
-      cliente_nome: usuarioNome,
-      valor_total: calcularTotal(),
-      observacoes: nomesAdicionais ? `Adicionais: ${nomesAdicionais}` : null,
-    };
+      // 1. Encontra o serviço selecionado
+      const servicoSelecionado = servicos.find(
+        (s) => s.id === parseInt(formData.servico),
+      );
 
-    console.log("🚀 Payload sendo enviado:", payload);
+      // 2. Gera a string de adicionais
+      const nomesAdicionais = formData.adicionais
+        .map(id => adicionais.find(a => a.id === id)?.nome)
+        .filter(Boolean)
+        .join(", ");
 
-    const response = await fetch(
-      "http://localhost:3001/api/agendamentos/cliente/criar",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const payload = {
+        servico_id: parseInt(formData.servico),
+        servico_nome: servicoSelecionado?.nome_servico || servicoSelecionado?.nome || "Serviço", 
+        data_agendamento: formData.data,
+        horario_agendamento: formData.horario,
+        cliente_nome: usuarioNome,
+        valor_total: calcularTotal(),
+        observacoes: nomesAdicionais ? `Adicionais: ${nomesAdicionais}` : null,
+      };
+
+      console.log("🚀 Payload sendo enviado:", payload);
+
+      const response = await fetch(
+        "http://localhost:3001/api/agendamentos/cliente/criar",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify(payload),
-      },
-    );
+      );
 
-    const data = await response.json();
-    if (data.success) {
-      setSubmitted(true);
-      setTimeout(() => {
-        setFormData({ data: "", horario: "", servico: "", adicionais: [] });
-        setSubmitted(false);
-      }, 3500);
-    } else {
-      setError(`❌ ${data.error || "Erro ao agendar"}`);
+      if (response.status === 403) {
+        setError("❌ Sua sessão expirou. Por favor, faça login novamente.");
+        localStorage.removeItem("authToken");
+        return;
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setSubmitted(true);
+        setTimeout(() => {
+          setFormData({ data: "", horario: "", servico: "", adicionais: [] });
+          setSubmitted(false);
+          navigate("/");
+        }, 3500);
+      } else {
+        setError(`❌ ${data.error || "Erro ao agendar"}`);
+      }
+    } catch (err) {
+      console.error("Erro no submit:", err);
+      setError("❌ Erro ao processar agendamento");
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    console.error("Erro no submit:", err);
-    setError("❌ Erro ao processar agendamento");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const hoje = new Date().toISOString().split("T")[0];
-  const diaFechado =
-    formData.data && new Date(formData.data.replace(/-/g, "/")).getDay() === 1;
+  const diaDaSemana = formData.data ? new Date(formData.data.replace(/-/g, "/")).getDay() : null;
+  const diaFechado = diaDaSemana === 0 || diaDaSemana === 1;
   const horariosDisponiveis = getHorariosDisponiveis(formData.data);
 
   return (
@@ -216,7 +303,7 @@ const FormAgendamento = () => {
       <div className="form-card">
         <div className="form-header">
           <button
-            onClick={() => (window.location.href = "/")}
+            onClick={() => navigate("/")}
             className="btn-home"
           >
             <Home size={20} />
@@ -263,7 +350,7 @@ const FormAgendamento = () => {
                 className="form-input"
               />
               {diaFechado && (
-                <p className="form-error">❌ Segunda-feira: Fechado</p>
+                <p className="form-error">❌ Domingo e Segunda: Barbearia Fechada</p>
               )}
             </div>
 
@@ -378,6 +465,12 @@ const FormAgendamento = () => {
             </button>
           </div>
         )}
+
+        <div className="back-button-container">
+          <button onClick={() => navigate(-1)} className="btn-back">
+            ← Voltar
+          </button>
+        </div>
       </div>
     </div>
   );

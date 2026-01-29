@@ -49,12 +49,29 @@ const FormBarberDashboard = () => {
     const buscarServicos = async () => {
       try {
         setLoadingServicos(true);
-        const response = await fetch("http://localhost:3001/api/servicos");
-        const data = await response.json();
-        if (data.success && data.servicos) {
-          setServicos(data.servicos);
-        } else {
-          setError("❌ Erro ao carregar serviços");
+        const token = localStorage.getItem("authToken");
+        
+        const response = await fetch("http://localhost:3001/api/servicos", {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.status === 403) {
+          console.warn("⚠️ Token inválido ou expirado");
+          localStorage.removeItem("authToken");
+          setError("❌ Sua sessão expirou. Por favor, faça login novamente.");
+          return;
+        }
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.servicos) {
+            setServicos(data.servicos);
+          } else {
+            setError("❌ Erro ao carregar serviços");
+          }
         }
       } catch (err) {
         console.error("Erro ao buscar serviços:", err);
@@ -72,9 +89,18 @@ const FormBarberDashboard = () => {
       const response = await fetch(
         `http://localhost:3001/api/agendamentos/ocupados?data=${data}`,
       );
-      const data_resp = await response.json();
-      if (data_resp.success) {
-        setAgendamentosOcupados(data_resp.agendamentos || []);
+
+      if (response.status === 403) {
+        console.warn("⚠️ Acesso negado ao buscar agendamentos");
+        setError("❌ Erro de permissão ao carregar horários");
+        return;
+      }
+
+      if (response.ok) {
+        const data_resp = await response.json();
+        if (data_resp.success) {
+          setAgendamentosOcupados(data_resp.agendamentos || []);
+        }
       }
     } catch (err) {
       console.error("Erro ao buscar horários:", err);
@@ -86,33 +112,78 @@ const FormBarberDashboard = () => {
     if (!data) return [];
 
     const diaDaSemana = new Date(data.replace(/-/g, "/")).getDay();
-    if (diaDaSemana === 1) return [];
+
+    // Domingo (0) e Segunda (1) - Fechado
+    if (diaDaSemana === 0 || diaDaSemana === 1) return [];
 
     let horarios = [];
-    const horaInicio = diaDaSemana === 0 ? 8 : 7;
-    const horaFim = diaDaSemana === 0 ? 12 : 21;
 
-    let totalMinutos = horaInicio * 60;
-    while (totalMinutos < horaFim * 60) {
-      const h = String(Math.floor(totalMinutos / 60)).padStart(2, "0");
-      const m = String(totalMinutos % 60).padStart(2, "0");
-      const horario = `${h}:${m}`;
+    // Terça (2), Quarta (3), Quinta (4)
+    if (diaDaSemana >= 2 && diaDaSemana <= 4) {
+      // Período da manhã: 7h até 11:10 (último corte)
+      let totalMinutos = 7 * 60; // 7:00
+      while (totalMinutos <= 11 * 60 + 10) { // 11:10
+        const h = String(Math.floor(totalMinutos / 60)).padStart(2, "0");
+        const m = String(totalMinutos % 60).padStart(2, "0");
+        const horario = `${h}:${m}`;
+        const ocupado = agendamentosOcupados.some((a) =>
+          a.horario_agendamento?.startsWith(horario),
+        );
+        if (!ocupado) horarios.push(horario);
+        totalMinutos += 50;
+      }
 
-      const ocupado = agendamentosOcupados.some((a) =>
-        a.horario_agendamento?.startsWith(horario),
-      );
-
-      if (!ocupado) horarios.push(horario);
-      totalMinutos += 50;
+      // Período da tarde: 13h até 19h (último corte)
+      totalMinutos = 13 * 60; // 13:00
+      while (totalMinutos < 19 * 60) { // Até 19:00
+        const h = String(Math.floor(totalMinutos / 60)).padStart(2, "0");
+        const m = String(totalMinutos % 60).padStart(2, "0");
+        const horario = `${h}:${m}`;
+        const ocupado = agendamentosOcupados.some((a) =>
+          a.horario_agendamento?.startsWith(horario),
+        );
+        if (!ocupado) horarios.push(horario);
+        totalMinutos += 50;
+      }
     }
+
+    // Sexta (5) e Sábado (6)
+    if (diaDaSemana === 5 || diaDaSemana === 6) {
+      // Período da manhã: 7h até 11:10 (último corte)
+      let totalMinutos = 7 * 60; // 7:00
+      while (totalMinutos <= 11 * 60 + 10) { // 11:10
+        const h = String(Math.floor(totalMinutos / 60)).padStart(2, "0");
+        const m = String(totalMinutos % 60).padStart(2, "0");
+        const horario = `${h}:${m}`;
+        const ocupado = agendamentosOcupados.some((a) =>
+          a.horario_agendamento?.startsWith(horario),
+        );
+        if (!ocupado) horarios.push(horario);
+        totalMinutos += 50;
+      }
+
+      // Período da tarde: 13h até 21:50 (último corte)
+      totalMinutos = 13 * 60; // 13:00
+      while (totalMinutos <= 21 * 60 + 50) { // 21:50
+        const h = String(Math.floor(totalMinutos / 60)).padStart(2, "0");
+        const m = String(totalMinutos % 60).padStart(2, "0");
+        const horario = `${h}:${m}`;
+        const ocupado = agendamentosOcupados.some((a) =>
+          a.horario_agendamento?.startsWith(horario),
+        );
+        if (!ocupado) horarios.push(horario);
+        totalMinutos += 50;
+      }
+    }
+
     return horarios;
   };
 
-  // ✅ Validar segunda-feira
+  // ✅ Validar domingo e segunda-feira
   const getDiaFechado = (data) => {
     if (!data) return false;
     const diaDaSemana = new Date(data.replace(/-/g, "/")).getDay();
-    return diaDaSemana === 1;
+    return diaDaSemana === 0 || diaDaSemana === 1;
   };
 
   // ✅ Formatar WhatsApp
@@ -194,6 +265,12 @@ const FormBarberDashboard = () => {
     try {
       const token = localStorage.getItem("authToken");
 
+      if (!token) {
+        setError("❌ Você precisa estar logado");
+        setLoading(false);
+        return;
+      }
+
       const servicoSelecionado = servicos.find(
         (s) => s.id === parseInt(formData.servico),
       );
@@ -217,6 +294,8 @@ const FormBarberDashboard = () => {
         observacoes: listaAdicionais ? `Adicionais: ${listaAdicionais}` : null,
       };
 
+      console.log("🚀 Payload sendo enviado:", payload);
+
       const response = await fetch(
         "http://localhost:3001/api/agendamentos/criar", // Rota do Barbeiro
         {
@@ -228,6 +307,12 @@ const FormBarberDashboard = () => {
           body: JSON.stringify(payload),
         },
       );
+
+      if (response.status === 403) {
+        setError("❌ Sua sessão expirou. Por favor, faça login novamente.");
+        localStorage.removeItem("authToken");
+        return;
+      }
 
       const data = await response.json();
 
@@ -246,6 +331,7 @@ const FormBarberDashboard = () => {
       setLoading(false);
     }
   };
+
   const servicoAtual = servicos.find(
     (s) => s.id === parseInt(formData.servico),
   );
@@ -363,7 +449,7 @@ const FormBarberDashboard = () => {
               />
               {diaFechado && (
                 <p className="form-error">
-                  ❌ Segunda-feira: Estabelecimento fechado
+                  ❌ Domingo e Segunda-feira: Estabelecimento fechado
                 </p>
               )}
             </div>
@@ -387,7 +473,7 @@ const FormBarberDashboard = () => {
                 {/* Caso 1: Nenhuma data selecionada */}
                 {!formData.data && <option value="">Selecione a data</option>}
 
-                {/* Caso 2: Segunda-feira (Fechado) */}
+                {/* Caso 2: Domingo ou Segunda-feira (Fechado) */}
                 {formData.data && diaFechado && (
                   <option value="">Barbearia Fechada</option>
                 )}
