@@ -1,7 +1,7 @@
 // src/services/api.js - FRONTEND
 
 const API_URL = 
-  import.meta.env.local.VITE_API_URL || "https://agostinho-barber-site-backend.onrender.com";
+  import.meta.env.VITE_API_URL || "https://agostinho-barber-site-backend.onrender.com";
   
 console.log("🔍 API_URL configurada:", API_URL);
 
