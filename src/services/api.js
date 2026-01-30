@@ -1,9 +1,22 @@
 // src/services/api.js - FRONTEND
 
-const API_URL = 
-  import.meta.env.VITE_API_URL || "https://agostinho-barber-site-backend.onrender.com";
+// src/services/api.js
+
+// 1. Pegamos a URL base (removendo barras extras no final se existirem)
+const BASE_URL = (import.meta.env.VITE_API_URL || "https://agostinho-barber-site-backend.onrender.com").replace(/\/$/, "");
+
+// 2. Forçamos o prefixo /api (garantindo que não fique api/api)
+const API_URL = BASE_URL.includes('/api') ? BASE_URL : `${BASE_URL}/api`;
+
+// 3. ESTE LOG É O MAIS IMPORTANTE:
+console.log("🚀 URL DE CHAMADA ATUAL:", API_URL);
+
+export const apiCall = async (endpoint, options = {}) => {
+  // Garantimos que o endpoint comece com /
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const fullUrl = `${API_URL}${cleanEndpoint}`;
   
-console.log("🔍 API_URL configurada:", API_URL);
+  console.log(`📡 Enviando ${options.method || 'GET'} para: ${fullUrl}`);
 
 // ==================== FUNÇÃO BASE DE CHAMADA ====================
 
