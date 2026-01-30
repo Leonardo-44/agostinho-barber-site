@@ -1,31 +1,23 @@
 // src/services/api.js - FRONTEND
 
-// src/services/api.js
-
-// 1. Pegamos a URL base (removendo barras extras no final se existirem)
+// 1. Configuração da URL Base (Remove barra final se houver)
 const BASE_URL = (import.meta.env.VITE_API_URL || "https://agostinho-barber-site-backend.onrender.com").replace(/\/$/, "");
 
-// 2. Forçamos o prefixo /api (garantindo que não fique api/api)
+// 2. Garantimos o prefixo /api (Evita duplicidade api/api)
 const API_URL = BASE_URL.includes('/api') ? BASE_URL : `${BASE_URL}/api`;
 
-// 3. ESTE LOG É O MAIS IMPORTANTE:
 console.log("🚀 URL DE CHAMADA ATUAL:", API_URL);
-
-export const apiCall = async (endpoint, options = {}) => {
-  // Garantimos que o endpoint comece com /
-  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-  const fullUrl = `${API_URL}${cleanEndpoint}`;
-  
-  console.log(`📡 Enviando ${options.method || 'GET'} para: ${fullUrl}`);
 
 // ==================== FUNÇÃO BASE DE CHAMADA ====================
 
 export const apiCall = async (endpoint, options = {}) => {
-  try {
-    console.log(`🌐 [API] Chamando: ${API_URL}${endpoint}`);
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const fullUrl = `${API_URL}${cleanEndpoint}`;
 
-    // ✅ Corrigido: 'fetch' escrito corretamente
-    const response = await fetch(`${API_URL}${endpoint}`, {
+  try {
+    console.log(`📡 [API] Enviando ${options.method || 'GET'} para: ${fullUrl}`);
+
+    const response = await fetch(fullUrl, {
       ...options,
       headers: {
         "Content-Type": "application/json",
@@ -35,14 +27,13 @@ export const apiCall = async (endpoint, options = {}) => {
 
     console.log(`📊 [API] Status da resposta: ${response.status}`);
 
-    // ✅ Tratamento de erro 403 - Token expirado
+    // ✅ Tratamento de erro 403 - Token expirado ou sem permissão
     if (response.status === 403) {
-      console.warn("⚠️ Token inválido ou expirado");
-      localStorage.removeItem("authToken");
+      console.warn("⚠️ Acesso negado ou Token expirado");
+      // Opcional: localStorage.removeItem("authToken");
       throw {
-        error: "❌ Sua sessão expirou. Por favor, faça login novamente.",
-        status: 403,
-        details: "Token inválido ou expirado",
+        error: "❌ Sessão inválida ou sem permissão. Por favor, refaça o login.",
+        status: 403
       };
     }
 
@@ -54,7 +45,7 @@ export const apiCall = async (endpoint, options = {}) => {
       console.error("❌ Erro ao parsear JSON:", parseError);
       throw {
         error: "❌ Resposta inválida do servidor",
-        details: "Servidor retornou dados não-JSON",
+        details: "O servidor não retornou um JSON válido.",
       };
     }
 
@@ -67,13 +58,15 @@ export const apiCall = async (endpoint, options = {}) => {
     }
 
     return data;
+
   } catch (error) {
     console.error(`❌ [API] Erro em ${endpoint}:`, error);
 
+    // Erros de conexão/rede
     if (error.message === "Failed to fetch" || error.name === "TypeError") {
       throw {
-        error: "🔴 Não foi possível conectar ao servidor. Verifique se o backend está rodando.",
-        details: "ERR_CONNECTION_REFUSED",
+        error: "🔴 Não foi possível conectar ao servidor. Verifique se o backend está rodando no Render.",
+        details: "ERR_CONNECTION_REFUSED ou CORS",
       };
     }
 
@@ -96,22 +89,19 @@ export const registerClient = async (clientData) => {
 };
 
 export const loginClient = async (credentials) => {
-  const payload = {
-    email: credentials.email,
-    senha: credentials.senha,
-  };
   return apiCall("/clientes/login", {
     method: "POST",
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      email: credentials.email,
+      senha: credentials.senha,
+    }),
   });
 };
 
 export const fetchClienteLogado = async (token) => {
   return apiCall("/clientes/perfil", {
     method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { Authorization: `Bearer ${token}` },
   });
 };
 
@@ -119,9 +109,7 @@ export const updateClientPerfil = async (clientData, token) => {
   return apiCall("/clientes/perfil/atualizar", {
     method: "PUT",
     body: JSON.stringify(clientData),
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { Authorization: `Bearer ${token}` },
   });
 };
 
@@ -149,14 +137,13 @@ export const requestPasswordReset = async (email) => {
 };
 
 export const resetPassword = async (token, newPassword, confirmPassword) => {
-  const payload = {
-    token,
-    nova_senha: newPassword,
-    confirmar_senha: confirmPassword,
-  };
   return apiCall("/auth/password/reset", {
     method: "POST",
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      token,
+      nova_senha: newPassword,
+      confirmar_senha: confirmPassword,
+    }),
   });
 };
 
@@ -166,7 +153,7 @@ export const fetchServicos = async () => {
   return apiCall("/servicos", { method: "GET" });
 };
 
-// ==================== ADMIN ====================
+// ==================== ADMIN GERAL ====================
 
 export const fetchAdminDashboard = async (adminToken) => {
   return apiCall("/admin/dashboard", {
@@ -217,27 +204,21 @@ export const criarAgendamentoCliente = async (payload, token) => {
   return apiCall("/agendamentos/cliente/criar", {
     method: "POST",
     body: JSON.stringify(payload),
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { Authorization: `Bearer ${token}` },
   });
 };
 
 export const fetchMeusAgendamentos = async (token) => {
   return apiCall("/agendamentos/cliente/meus", {
     method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { Authorization: `Bearer ${token}` },
   });
 };
 
 export const cancelarAgendamento = async (agendamentoId, token) => {
   return apiCall(`/agendamentos/cliente/${agendamentoId}/cancelar`, {
     method: "PUT",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { Authorization: `Bearer ${token}` },
   });
 };
 
@@ -247,18 +228,14 @@ export const criarAgendamentoManual = async (payload, token) => {
   return apiCall("/agendamentos/criar", {
     method: "POST",
     body: JSON.stringify(payload),
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { Authorization: `Bearer ${token}` },
   });
 };
 
 export const fetchAgendamentosDoBarbeiro = async (token) => {
   return apiCall("/agendamentos/barbeiro", {
     method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { Authorization: `Bearer ${token}` },
   });
 };
 
@@ -266,39 +243,32 @@ export const updateAgendamentoBarbeiro = async (agendamentoId, payload, token) =
   return apiCall(`/agendamentos/${agendamentoId}`, {
     method: "PUT",
     body: JSON.stringify(payload),
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { Authorization: `Bearer ${token}` },
   });
 };
 
 // ==================== HORÁRIOS ====================
 
 export const fetchHorariosOcupados = async (data) => {
-  return apiCall(`/agendamentos/ocupados?data=${data}`, {
-    method: "GET",
-  });
+  return apiCall(`/agendamentos/ocupados?data=${data}`, { method: "GET" });
 };
 
-// ==================== BARBEIRO ====================
+// ==================== BARBEIRO PERFIL ====================
 
 export const loginBarbeiro = async (credentials) => {
-  const payload = {
-    email: credentials.email,
-    senha: credentials.senha,
-  };
   return apiCall("/barbeiro/login", {
     method: "POST",
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      email: credentials.email,
+      senha: credentials.senha,
+    }),
   });
 };
 
 export const fetchBarbeiroLogado = async (token) => {
   return apiCall("/barbeiro/perfil", {
     method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { Authorization: `Bearer ${token}` },
   });
 };
 
@@ -306,13 +276,11 @@ export const updateBarbeiroPerfil = async (barbeiroData, token) => {
   return apiCall("/barbeiro/perfil/atualizar", {
     method: "PUT",
     body: JSON.stringify(barbeiroData),
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { Authorization: `Bearer ${token}` },
   });
 };
 
-// ==================== ADMIN - BARBEIRO ====================
+// ==================== ADMIN - GERENCIAR BARBEIROS ====================
 
 export const fetchAllBarbeiros = async (adminToken) => {
   return apiCall("/admin/barbeiros", {
@@ -344,7 +312,7 @@ export const deleteBarbeiro = async (barbeiroId, adminToken) => {
   });
 };
 
-// ==================== ADMIN - SERVIÇOS ====================
+// ==================== ADMIN - GERENCIAR SERVIÇOS ====================
 
 export const createServico = async (servicoData, adminToken) => {
   return apiCall("/admin/servicos", {
@@ -372,53 +340,38 @@ export const deleteServico = async (servicoId, adminToken) => {
 // ==================== EXPORTS ====================
 
 const api = {
-  // Cliente
   registerClient,
   loginClient,
   fetchClienteLogado,
   updateClientPerfil,
-  
-  // Auth
   verifyEmailCode,
   resendEmailCode,
   requestPasswordReset,
   resetPassword,
-  
-  // Serviços
   fetchServicos,
-  createServico,
-  updateServico,
-  deleteServico,
-  
-  // Admin
   fetchAdminDashboard,
   fetchAllClients,
   deleteClient,
   fetchAllAgendamentos,
   updateAgendamentoStatus,
   deleteAgendamento,
+  criarAgendamentoCliente,
+  fetchMeusAgendamentos,
+  cancelarAgendamento,
+  criarAgendamentoManual,
+  fetchAgendamentosDoBarbeiro,
+  updateAgendamentoBarbeiro,
+  fetchHorariosOcupados,
+  loginBarbeiro,
+  fetchBarbeiroLogado,
+  updateBarbeiroPerfil,
   fetchAllBarbeiros,
   createBarbeiro,
   updateBarbeiro,
   deleteBarbeiro,
-  
-  // Agendamentos - Cliente
-  criarAgendamentoCliente,
-  fetchMeusAgendamentos,
-  cancelarAgendamento,
-  
-  // Agendamentos - Barbeiro
-  criarAgendamentoManual,
-  fetchAgendamentosDoBarbeiro,
-  updateAgendamentoBarbeiro,
-  
-  // Horários
-  fetchHorariosOcupados,
-  
-  // Barbeiro
-  loginBarbeiro,
-  fetchBarbeiroLogado,
-  updateBarbeiroPerfil,
+  createServico,
+  updateServico,
+  deleteServico,
 };
 
 export default api;
