@@ -9,6 +9,8 @@ import {
   Trash2,
   Loader
 } from 'lucide-react';
+// ✅ Importação do serviço centralizado
+import api from '../../services/api';
 
 const MeusAgendamentos = () => {
   const [agendamentos, setAgendamentos] = useState([]);
@@ -16,45 +18,29 @@ const MeusAgendamentos = () => {
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('all');
 
+  // ✅ CORREÇÃO API: Buscar agendamentos do cliente logado
   const fetchMeusAgendamentos = async () => {
     try {
       setLoading(true);
       setError('');
       const token = localStorage.getItem("authToken");
+      
       if (!token) {
         setError('❌ Você precisa estar logado');
         setLoading(false);
         return;
       }
 
-      const response = await fetch("http://localhost:3001/api/agendamentos/cliente/meus", {
-        headers: { 
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
-      });
+      const data = await api.fetchMeusAgendamentos(token);
 
-      if (response.status === 403) {
-        console.warn("⚠️ Token inválido ou expirado");
-        localStorage.removeItem("authToken");
-        setError('❌ Sua sessão expirou. Por favor, faça login novamente.');
-        setLoading(false);
-        return;
-      }
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setAgendamentos(data.agendamentos || []);
-        } else {
-          setError('❌ ' + (data.error || 'Erro ao carregar agendamentos'));
-        }
+      if (data.success) {
+        setAgendamentos(data.agendamentos || []);
       } else {
-        setError('❌ Erro ao conectar com o servidor');
+        setError('❌ ' + (data.error || 'Erro ao carregar agendamentos'));
       }
     } catch (err) {
       console.error("Erro ao buscar agendamentos:", err);
-      setError('❌ Erro ao conectar com o servidor');
+      setError(err.error || '❌ Erro ao conectar com o servidor');
     } finally {
       setLoading(false);
     }
@@ -64,6 +50,7 @@ const MeusAgendamentos = () => {
     fetchMeusAgendamentos();
   }, []);
 
+  // ✅ CORREÇÃO API: Cancelar agendamento
   const handleCancelAgendamento = async (id) => {
     if (!window.confirm("Deseja realmente cancelar este agendamento?")) return;
 
@@ -75,38 +62,25 @@ const MeusAgendamentos = () => {
         return;
       }
 
-      const response = await fetch(`http://localhost:3001/api/agendamentos/cliente/${id}/cancelar`, {
-        method: "PUT", 
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}` 
-        }
-      });
+      const data = await api.cancelarAgendamento(id, token);
 
-      if (response.status === 403) {
-        console.warn("⚠️ Token inválido ou expirado");
-        localStorage.removeItem("authToken");
-        setError('❌ Sua sessão expirou. Por favor, faça login novamente.');
-        return;
-      }
-
-      if (response.ok) {
+      if (data.success) {
         setAgendamentos(prev => prev.map(a => 
           a.id === id ? { ...a, status: 'cancelled' } : a
         ));
         setError('');
         alert("✅ Agendamento cancelado com sucesso!");
       } else {
-        const data = await response.json();
         setError('❌ ' + (data.error || 'Erro ao cancelar agendamento'));
       }
     } catch (err) {
       console.error("Erro ao cancelar agendamento:", err);
-      setError('❌ Erro ao conectar com o servidor');
+      setError(err.error || '❌ Erro ao conectar com o servidor');
     }
   };
 
-  // ✅ Função para padronizar a verificação de status (evita erro de maiúsculas/minúsculas)
+  // --- LÓGICA DE INTERFACE (MANTIDA ORIGINAL) ---
+
   const compararStatus = (statusOriginal, statusAlvo) => {
     return statusOriginal?.toLowerCase() === statusAlvo.toLowerCase();
   };
@@ -199,7 +173,6 @@ const MeusAgendamentos = () => {
                   </div>
 
                   <div className="item-acoes">
-                    {/* ✅ MUDANÇA AQUI: Aceita 'pending' ou 'Pendente' */}
                     {(compararStatus(agendamento.status, 'pending')) && (
                       <button
                         onClick={() => handleCancelAgendamento(agendamento.id)}

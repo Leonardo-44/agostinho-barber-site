@@ -15,6 +15,8 @@ import {
   Home,
   Plus,
 } from "lucide-react";
+// ✅ Importação da API centralizada
+import api from "../../services/api";
 
 const BarberDashboard = () => {
   const navigate = useNavigate();
@@ -26,7 +28,7 @@ const BarberDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // ✅ Buscar agendamentos do backend
+  // ✅ CORREÇÃO API: Buscar agendamentos do barbeiro
   const fetchAppointments = async () => {
     try {
       setLoading(true);
@@ -34,28 +36,21 @@ const BarberDashboard = () => {
       const token = localStorage.getItem("authToken");
 
       if (!token) {
-        setError("Você precisa estar logado");
+        setError("❌ Você precisa estar logado");
         setLoading(false);
         return;
       }
 
-      const response = await fetch(
-        "http://localhost:3001/api/agendamentos/lista",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-
-      const data = await response.json();
+      const data = await api.fetchAgendamentosDoBarbeiro(token);
 
       if (data.success) {
         setAppointments(data.agendamentos || []);
       } else {
-        setError(data.error || "Erro ao carregar agendamentos");
+        setError(data.error || "❌ Erro ao carregar agendamentos");
       }
     } catch (err) {
       console.error("❌ Erro ao buscar agendamentos:", err);
-      setError("Erro ao conectar com o servidor");
+      setError(err.error || "❌ Erro ao conectar com o servidor");
     } finally {
       setLoading(false);
     }
@@ -68,59 +63,64 @@ const BarberDashboard = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // ✅ Atualizar status do agendamento
+  // ✅ CORREÇÃO API: Atualizar status do agendamento
   const handleStatusChange = async (id, newStatus) => {
     try {
       const token = localStorage.getItem("authToken");
-      const response = await fetch(
-        `http://localhost:3001/api/agendamentos/${id}/status`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ status: newStatus }),
-        },
+      
+      if (!token) {
+        setError("❌ Você precisa estar logado");
+        return;
+      }
+
+      const data = await api.updateAgendamentoBarbeiro(
+        id,
+        { status: newStatus },
+        token
       );
 
-      if (response.ok) {
+      if (data.success) {
         setAppointments((prev) =>
           prev.map((app) =>
             app.id === id ? { ...app, status: newStatus } : app,
           ),
         );
+        setError("");
       } else {
-        setError("Erro ao atualizar status");
+        setError(data.error || "❌ Erro ao atualizar status");
       }
     } catch (err) {
       console.error("❌ Erro ao atualizar status:", err);
-      setError("Erro ao atualizar status");
+      setError(err.error || "❌ Erro ao atualizar status");
     }
   };
 
-  // ✅ Deletar agendamento
+  // ✅ CORREÇÃO API: Deletar agendamento
   const handleDelete = async (id) => {
     if (!window.confirm("Deseja apagar este registro permanentemente?")) return;
 
     try {
       const token = localStorage.getItem("authToken");
-      const response = await fetch(
-        `http://localhost:3001/api/agendamentos/${id}/cancelar`,
-        {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
+      
+      if (!token) {
+        setError("❌ Você precisa estar logado");
+        return;
+      }
 
-      if (response.ok) {
+      // Usando a função de cancelar agendamento do cliente
+      // (ou você pode criar uma específica para barbeiro se necessário)
+      const data = await api.cancelarAgendamento(id, token);
+
+      if (data.success) {
         setAppointments((prev) => prev.filter((app) => app.id !== id));
+        setError("");
+        alert("✅ Agendamento deletado com sucesso!");
       } else {
-        setError("Erro ao deletar agendamento");
+        setError(data.error || "❌ Erro ao deletar agendamento");
       }
     } catch (err) {
       console.error("❌ Erro ao deletar:", err);
-      setError("Erro ao deletar agendamento");
+      setError(err.error || "❌ Erro ao deletar agendamento");
     }
   };
 

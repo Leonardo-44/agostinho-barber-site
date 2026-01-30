@@ -1,50 +1,55 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import '../Login.css';
 
 const EsqueciSenha = () => {
+    const navigate = useNavigate();
     const [email, setEmail] = useState('');
-    const [statusMessage, setStatusMessage] = useState({ type: '', message: '' }); // Para sucesso/erro
-    const [loading, setLoading] = useState(false); // Para botão de carregamento
+    const [statusMessage, setStatusMessage] = useState({ type: '', message: '' });
+    const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setStatusMessage({ type: '', message: '' }); // Limpa mensagens anteriores
+        setStatusMessage({ type: '', message: '' });
 
-        if (!email) {
-            setStatusMessage({ type: 'error', message: 'Por favor, digite seu e-mail.' });
+        if (!email.trim()) {
+            setStatusMessage({ type: 'error', message: '❌ Por favor, digite seu e-mail.' });
             return;
         }
 
-        setLoading(true); // Inicia o carregamento
+        // Validação básica de email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            setStatusMessage({ type: 'error', message: '❌ Por favor, digite um e-mail válido.' });
+            return;
+        }
+
+        setLoading(true);
 
         try {
-            // Chamada REAL ao endpoint do backend: /auth/password/forgot
             const response = await api.requestPasswordReset(email);
 
-            // O backend retorna sucesso genérico (por segurança) se encontrar ou não o email.
             setStatusMessage({
                 type: 'success',
-                message: response.message || `Perfeito! Se encontrarmos este e-mail, enviamos as instruções para ${email}. Verifique sua caixa de entrada.`
+                message: response.message || 
+                    `✅ Perfeito! Se encontrarmos este e-mail, enviamos as instruções para ${email}. Verifique sua caixa de entrada e spam.`
             });
 
             // Limpa o campo após o envio
             setEmail('');
 
         } catch (error) {
-            console.error("Erro ao solicitar redefinição:", error);
+            console.error("❌ Erro ao solicitar redefinição:", error);
 
-            // Se houver erro de conexão ou outro erro interno, exibe a mensagem
-            const errorMessage = error.error || 'Erro interno ao tentar enviar o e-mail. Tente novamente.';
-            setStatusMessage({ type: 'error', message: errorMessage });
+            const errorMessage = error?.error || 
+                'Erro ao tentar enviar o e-mail. Verifique sua conexão e tente novamente.';
+            setStatusMessage({ type: 'error', message: `❌ ${errorMessage}` });
 
         } finally {
             setLoading(false);
         }
     };
-
-    // Define a classe da mensagem
-    const messageClass = statusMessage.type === 'error' ? 'error-message' : 'success-message';
 
     return (
         <div className="login-container">
@@ -56,14 +61,12 @@ const EsqueciSenha = () => {
                     <p>Informe seu e-mail para receber o link de recuperação.</p>
                 </div>
 
-                {/* Exibe a mensagem de status (sucesso/erro) */}
                 {statusMessage.message && (
-                    <div className={`message ${messageClass}`}>
+                    <div className={`message ${statusMessage.type === 'error' ? 'error-message' : 'success-message'}`}>
                         <p>{statusMessage.message}</p>
                     </div>
                 )}
 
-                {/* Mostra o formulário apenas se não houver mensagem de sucesso final */}
                 {statusMessage.type !== 'success' && (
                     <form onSubmit={handleSubmit} className="login-form">
                         <div className="input-group">
@@ -76,6 +79,7 @@ const EsqueciSenha = () => {
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
                                 disabled={loading}
+                                autoComplete="email"
                             />
                         </div>
 
@@ -87,7 +91,19 @@ const EsqueciSenha = () => {
 
                 <div className="login-footer">
                     <a href="/login">Lembrei minha senha! Fazer Login</a>
+                    <p style={{ marginTop: '10px' }}>
+                        Não tem conta? <a href="/cadastro" className="highlight-link">Cadastre-se</a>
+                    </p>
                 </div>
+
+                <button 
+                    onClick={() => navigate('/')} 
+                    className="btn btn-secondary"
+                    disabled={loading}
+                    style={{ marginTop: '16px' }}
+                >
+                    Voltar para Home
+                </button>
             </div>
         </div>
     );
