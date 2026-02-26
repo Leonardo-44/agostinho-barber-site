@@ -38,7 +38,7 @@
   max-width: 400px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
   border: 1px solid var(--border-color);
-  text-align: center;
+  text-align: center
 }
 
 /* Estilo do Logo/Título */
@@ -52,7 +52,11 @@
   border-radius: 8px;
   margin-left: auto;
   margin-right: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+
 
 .login-header h1 {
   color: var(--text-white);
