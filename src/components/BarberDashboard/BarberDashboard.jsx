@@ -109,7 +109,7 @@ const BarberDashboard = () => {
 
       // Usando a função de cancelar agendamento do cliente
       // (ou você pode criar uma específica para barbeiro se necessário)
-      const data = await api.cancelarAgendamento(id, token);
+      const data = await api.deletarAgendamentoBarbeiro(id, token);
 
       if (data.success) {
         setAppointments((prev) => prev.filter((app) => app.id !== id));

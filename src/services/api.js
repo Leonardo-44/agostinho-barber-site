@@ -240,9 +240,16 @@ export const fetchAgendamentosDoBarbeiro = async (token) => {
 };
 
 export const updateAgendamentoBarbeiro = async (agendamentoId, payload, token) => {
-  return apiCall(`/agendamentos/${agendamentoId}`, {
+  return apiCall(`/agendamentos/${agendamentoId}/status`, {
     method: "PUT",
     body: JSON.stringify(payload),
+    headers: { Authorization: `Bearer ${token}` },
+  });
+};
+
+export const deletarAgendamentoBarbeiro = async (agendamentoId, token) => {
+  return apiCall(`/agendamentos/${agendamentoId}/cancelar`, {
+    method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
   });
 };
@@ -361,6 +368,7 @@ const api = {
   criarAgendamentoManual,
   fetchAgendamentosDoBarbeiro,
   updateAgendamentoBarbeiro,
+  deletarAgendamentoBarbeiro,
   fetchHorariosOcupados,
   loginBarbeiro,
   fetchBarbeiroLogado,
@@ -372,6 +380,7 @@ const api = {
   createServico,
   updateServico,
   deleteServico,
+
 };
 
 export default api;
