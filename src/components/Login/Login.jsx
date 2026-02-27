@@ -29,26 +29,22 @@ const Login = () => {
     try {
       console.log('📝 [FORM] Iniciando login para:', email);
       
-      // ✅ CORRIGIDO: Passar objeto com { email, senha }
       const response = await loginClient({ 
         email: email,
-        senha: password  // ⚠️ Backend espera "senha", não "password"
+        senha: password
       });
       
       console.log('✅ [LOGIN] Resposta recebida:', response);
       
-      // Verificar se login foi bem-sucedido
       if (!response.success) {
         throw { error: response.error || 'Erro ao fazer login' };
       }
 
-      // Salvar token no localStorage
       if (response.token) {
         localStorage.setItem('authToken', response.token);
         console.log('💾 Token salvo no localStorage');
       }
       
-      // Salvar dados do usuário
       if (response.user) {
         localStorage.setItem('userData', JSON.stringify(response.user));
         localStorage.setItem('userEmail', response.user.email);
@@ -57,26 +53,16 @@ const Login = () => {
         console.log('💾 Dados do usuário salvos');
       }
       
-      // Mensagem de sucesso
       const nomeUsuario = response.user?.nome || 'usuário';
       setSuccess(`✅ Bem-vindo de volta, ${nomeUsuario}!`);
       
-      // Redirecionar após 1.5 segundos
       setTimeout(() => {
-        const userRole = response.user?.role;
-        
-        // Redirecionar baseado no role
-        if (userRole === 'admin') {
-          navigate('/');
-        } else {
-          navigate('/'); // ou '/cliente/dashboard'
-        }
+        navigate('/');
       }, 1500);
       
     } catch (err) {
       console.error("❌ Erro de Login:", err);
       
-      // Extrair mensagem de erro
       let errorMessage = 'Erro ao fazer login. Verifique suas credenciais.';
       
       if (err?.error) {
@@ -85,11 +71,8 @@ const Login = () => {
         errorMessage = err.message;
       }
       
-      // Mensagens específicas por status
       if (err?.status === 401) {
         errorMessage = 'E-mail ou senha incorretos.';
-      } else if (err?.status === 403) {
-        errorMessage = 'Conta não verificada. Por favor, verifique seu e-mail.';
       } else if (err?.status === 404) {
         errorMessage = 'Usuário não encontrado. Você já se cadastrou?';
       } else if (err?.status === 500) {
@@ -196,7 +179,6 @@ const Login = () => {
         </form>
 
         <div className="login-footer">
-          <a href="/esqueci-senha">Esqueci minha senha</a>
           <p>
             Ainda não tem conta?{" "}
             <a href="/cadastro" className="highlight-link">

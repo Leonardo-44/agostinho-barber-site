@@ -66,7 +66,6 @@ const RedefinirSenha = () => {
     setLoading(true);
 
     try {
-      const data = await api.resetPassword(token, newPassword, confirmPassword);
 
       setStatusMessage({
         type: "success",

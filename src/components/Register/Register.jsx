@@ -20,50 +20,34 @@ const Register = () => {
   const [success, setSuccess] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  // Função auxiliar para limpar o WhatsApp e garantir +55
   const getCleanWhatsappNumber = (formattedNumber) => {
     let cleaned = formattedNumber.replace(/\D/g, "");
-
-    // Remove o 55 se estiver no início para evitar duplicação
     if (cleaned.startsWith("55")) {
       cleaned = cleaned.slice(2);
     }
-
-    // Adiciona +55 no início
     return `+55${cleaned}`;
   };
 
   const handleChange = (e) => {
     const { id, value } = e.target;
 
-    // Tratamento especial para WhatsApp
     if (id === "whatsapp") {
-      // Se o campo está vazio, deixa vazio
       if (value === "" || value === "+55") {
         setFormData({ ...formData, [id]: "" });
         return;
       }
 
-      // Remove caracteres não numéricos
       let cleaned = value.replace(/\D/g, "");
-
-      // Se já começa com 55, remove apenas UMA vez
       if (cleaned.startsWith("55")) {
         cleaned = cleaned.slice(2);
       }
-
-      // Limita a 11 dígitos (DDD + número)
       cleaned = cleaned.slice(0, 11);
 
       let formatted = "";
-
-      // Formata: +55 (XX) XXXXX-XXXX
       if (cleaned.length > 0) {
         formatted = "+55 (" + cleaned.slice(0, 2);
-        
         if (cleaned.length > 2) {
           formatted += ") " + cleaned.slice(2, 7);
-          
           if (cleaned.length > 7) {
             formatted += "-" + cleaned.slice(7, 11);
           }
@@ -81,7 +65,6 @@ const Register = () => {
     setError("");
     setSuccess("");
 
-    // Validações básicas
     if (!formData.nome.trim()) {
       setError("❌ Nome é obrigatório!");
       return;
@@ -97,14 +80,12 @@ const Register = () => {
       return;
     }
 
-    // Valida WhatsApp
     const cleanedWhatsapp = formData.whatsapp.replace(/\D/g, "");
     if (cleanedWhatsapp.length < 13) {
       setError("❌ WhatsApp inválido! Use o formato +55 (XX) XXXXX-XXXX");
       return;
     }
 
-    // Validação de senhas
     if (formData.senha !== formData.confirmarSenha) {
       setError("❌ As senhas não coincidem!");
       return;
@@ -118,27 +99,20 @@ const Register = () => {
     setLoading(true);
 
     try {
-      // Prepara o número de WhatsApp limpo para envio
       const rawWhatsappNumber = getCleanWhatsappNumber(formData.whatsapp);
 
-      // 🚀 CHAMA A API: Cadastra o usuário e o Back-end envia o código OTP
       await registerClient({
         nome: formData.nome,
         sobrenome: formData.sobrenome,
-        whatsapp: rawWhatsappNumber, // Envia no formato +55XXXXXXXXXXX
+        whatsapp: rawWhatsappNumber,
         email: formData.email,
         senha: formData.senha,
       });
 
-      setSuccess(
-        `✅ Cadastro realizado! Enviamos um código para ${formData.email}.`
-      );
+      setSuccess("✅ Cadastro realizado com sucesso!");
 
-      // ➡️ REDIRECIONA PARA VALIDAÇÃO PASSANDO O EMAIL NA ROTA
       setTimeout(() => {
-        navigate("/validacao-email", {
-          state: { email: formData.email, whatsapp: rawWhatsappNumber },
-        });
+        navigate("/login");
       }, 1500);
     } catch (err) {
       const errorMessage =
