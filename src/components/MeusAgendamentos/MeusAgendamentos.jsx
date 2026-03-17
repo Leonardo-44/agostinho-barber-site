@@ -95,11 +95,10 @@ const MeusAgendamentos = () => {
   );
 
   const formatDate = (dateString) => {
-    if (!dateString) return "--/--/--";
-    return new Date(dateString).toLocaleDateString('pt-BR', {
-      day: '2-digit', month: '2-digit', year: 'numeric'
-    });
-  };
+  if (!dateString) return "--/--/--";
+  const [year, month, day] = dateString.split('T')[0].split('-');
+  return `${day}/${month}/${year}`;
+};
 
   const getStatusLabel = (status) => {
     if (compararStatus(status, 'pending')) return 'Pendente';
