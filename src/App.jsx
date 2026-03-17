@@ -10,6 +10,7 @@ import ValidacaoEmail from "./pages/ValidacaoEmail.jsx";
 import RedefinirSenhaUser from "./pages/RedefinirSenha.jsx";
 import MeusAgendamentos from "./pages/MeusAgendamentos.jsx";
 import FormBarber from "./pages/FormBarberDashboard.jsx";
+import FiadoDashboard from "./pages/FiadosDashboard.jsx";
 
 
 // 1. Importe o AuthProvider que criamos no passo anterior
@@ -50,6 +51,15 @@ function App() {
               </ProtectedRoute>
             } 
           />       
+
+          <Route
+          path="/fiados"
+          element={
+            <ProtectedRoute adminOnly={true}> 
+            <FiadoDashboard/>
+            </ProtectedRoute>
+          }
+          />
         </Routes> 
       </BrowserRouter>
     </AuthProvider>

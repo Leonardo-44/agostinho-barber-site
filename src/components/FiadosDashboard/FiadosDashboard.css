@@ -1,0 +1,613 @@
+/* ═══════════════════════════════════════════════
+   FiadosDashboard.css
+   Estilo igual ao BarberDashboard para consistência
+═══════════════════════════════════════════════ */
+
+/* ── Geral ─────────────────────────────────── */
+.fiados-container {
+  min-height: 100vh;
+  background: #0d0d0d;
+  color: #f0ede8;
+  font-family: 'Segoe UI', sans-serif;
+  padding-bottom: 40px;
+}
+
+/* ── Loading ────────────────────────────────── */
+.loading-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: #0d0d0d;
+  color: #f0ede8;
+  gap: 16px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #2a2a2a;
+  border-top: 3px solid #c9a84c;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Header ─────────────────────────────────── */
+.fiados-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  background: #141414;
+  border-bottom: 1px solid #222;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.logo-icon {
+  color: #c9a84c;
+}
+
+.fiados-header h1 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #f0ede8;
+  margin: 0;
+}
+
+.fiados-header h1 span {
+  color: #c9a84c;
+}
+
+.fiados-header p {
+  font-size: 13px;
+  color: #666;
+  margin: 2px 0 0;
+}
+
+.btn-home {
+  background: transparent;
+  border: 1px solid #2a2a2a;
+  color: #888;
+  border-radius: 10px;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.btn-home:hover {
+  border-color: #c9a84c;
+  color: #c9a84c;
+}
+
+.btn-novo-fiado {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #c9a84c;
+  color: #0d0d0d;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-novo-fiado:hover {
+  background: #e0b95a;
+}
+
+/* ── Error Banner ───────────────────────────── */
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #2a1111;
+  border: 1px solid #5a1f1f;
+  color: #ff6b6b;
+  padding: 12px 20px;
+  margin: 12px 24px;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.error-banner p { flex: 1; margin: 0; }
+
+.error-close {
+  background: transparent;
+  border: none;
+  color: #ff6b6b;
+  font-size: 20px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+/* ── Stats ──────────────────────────────────── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 20px 24px 0;
+}
+
+.stat-card {
+  background: #141414;
+  border: 1px solid #222;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #666;
+  margin: 0 0 6px;
+}
+
+.stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.stat-amber { color: #c9a84c; }
+.stat-red   { color: #e05252; }
+.stat-green { color: #4caf7d; }
+
+/* ── Filtros ────────────────────────────────── */
+.filter-container {
+  display: flex;
+  gap: 8px;
+  padding: 16px 24px;
+  flex-wrap: wrap;
+}
+
+.filter-button {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid #2a2a2a;
+  background: transparent;
+  color: #888;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-button:hover {
+  border-color: #c9a84c;
+  color: #c9a84c;
+}
+
+.filter-button.active {
+  background: #c9a84c;
+  border-color: #c9a84c;
+  color: #0d0d0d;
+  font-weight: 700;
+}
+
+/* ── Section Labels ─────────────────────────── */
+.section-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0 4px;
+  margin: 8px 0 4px;
+}
+
+.label-red    { color: #e05252; }
+.label-amber  { color: #c9a84c; }
+.label-green  { color: #4caf7d; }
+
+/* ── Fiados List ────────────────────────────── */
+.fiados-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 24px;
+}
+
+/* ── Fiado Card ─────────────────────────────── */
+.fiado-card {
+  background: #141414;
+  border: 1px solid #222;
+  border-left: 4px solid #333;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color 0.2s;
+}
+
+.fiado-card:hover {
+  border-color: #2a2a2a;
+}
+
+.card-border-red    { border-left-color: #e05252 !important; }
+.card-border-amber  { border-left-color: #c9a84c !important; }
+.card-border-green  { border-left-color: #4caf7d !important; }
+
+/* ── Card Header ────────────────────────────── */
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badge-pend { background: #2a2000; color: #c9a84c; }
+.badge-atr  { background: #2a1111; color: #e05252; }
+.badge-pago { background: #0e2a1a; color: #4caf7d; }
+
+.btn-delete {
+  background: transparent;
+  border: 1px solid #2a2a2a;
+  color: #555;
+  border-radius: 8px;
+  padding: 5px 7px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.btn-delete:hover {
+  border-color: #e05252;
+  color: #e05252;
+}
+
+/* ── Card Identity ──────────────────────────── */
+.card-identity {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.av-amber  { background: #2a2000; color: #c9a84c; }
+.av-blue   { background: #001a2a; color: #5baee0; }
+.av-teal   { background: #002a1e; color: #4caf7d; }
+.av-purple { background: #1a0a2a; color: #a07de0; }
+.av-coral  { background: #2a0e0e; color: #e07d5b; }
+.av-gray   { background: #1e1e1e; color: #888; }
+
+.card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #f0ede8;
+  margin: 0 0 2px;
+}
+
+.card-subtitle {
+  font-size: 13px;
+  color: #888;
+  margin: 0;
+}
+
+.card-whatsapp {
+  font-size: 12px;
+  color: #4caf7d;
+  margin: 4px 0 0;
+}
+
+/* ── Card Info ──────────────────────────────── */
+.card-info {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.card-info-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  color: #666;
+}
+
+.card-info-item.info-red {
+  color: #e05252;
+}
+
+/* ── Card Footer ────────────────────────────── */
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.price-tag {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #c9a84c;
+}
+
+.btn-pago {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #0e2a1a;
+  color: #4caf7d;
+  border: 1px solid #1e4a2a;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-pago:hover {
+  background: #4caf7d;
+  color: #0d0d0d;
+  border-color: #4caf7d;
+}
+
+/* ── Card Obs ───────────────────────────────── */
+.card-obs {
+  font-size: 12px;
+  color: #555;
+  background: #0a0a0a;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin: 0;
+}
+
+/* ── Empty State ────────────────────────────── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 12px;
+  color: #444;
+  text-align: center;
+}
+
+.empty-state p {
+  font-size: 14px;
+  color: #555;
+}
+
+.btn-retry {
+  background: #1e1e1e;
+  border: 1px solid #2a2a2a;
+  color: #888;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-retry:hover {
+  border-color: #c9a84c;
+  color: #c9a84c;
+}
+
+/* ── Modal ──────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  padding: 20px;
+}
+
+.modal-box {
+  background: #141414;
+  border: 1px solid #2a2a2a;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #222;
+}
+
+.modal-header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #f0ede8;
+  margin: 0;
+}
+
+.modal-close {
+  background: transparent;
+  border: 1px solid #2a2a2a;
+  color: #888;
+  border-radius: 8px;
+  padding: 5px 7px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.modal-close:hover {
+  border-color: #e05252;
+  color: #e05252;
+}
+
+.modal-body {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.form-group input,
+.form-group textarea {
+  background: #0d0d0d;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  color: #f0ede8;
+  font-size: 14px;
+  padding: 10px 12px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  border-color: #c9a84c;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: #444;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 10px;
+  padding: 16px 24px 20px;
+  border-top: 1px solid #222;
+}
+
+.btn-cancelar {
+  flex: 1;
+  background: transparent;
+  border: 1px solid #2a2a2a;
+  color: #888;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-cancelar:hover {
+  border-color: #555;
+  color: #aaa;
+}
+
+.btn-salvar {
+  flex: 2;
+  background: #c9a84c;
+  border: none;
+  color: #0d0d0d;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-salvar:hover {
+  background: #e0b95a;
+}
+
+.btn-salvar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Nome do barbeiro no header */
+.header-barbeiro {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #c9a84c;
+  margin: 3px 0 0;
+}
+ 
+/* Quem registrou o fiado — dentro do card */
+.card-barbeiro {
+  font-size: 11px;
+  color: #555;
+  margin: 4px 0 0;
+}
+
+/* ── Responsivo ─────────────────────────────── */
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .fiados-header h1 {
+    font-size: 18px;
+  }
+}

@@ -742,6 +742,34 @@ body {
   height: 300px;
 }
 
+/* Agrupa os botões do header lado a lado */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+ 
+/* Botão Fiados — estilo diferente do "Novo" para distinguir */
+.btn-fiados {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid #c9a84c;
+  color: #c9a84c;
+  border-radius: 10px;
+  padding: 9px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+ 
+.btn-fiados:hover {
+  background: #c9a84c;
+  color: #0d0d0d;
+}
+
 /* Responsivo - Mobile */
 @media (max-width: 640px) {
   .btn-novo-agendamento {

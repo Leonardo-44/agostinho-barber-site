@@ -8,14 +8,13 @@ import {
   XCircle,
   Trash2,
   User,
-  FileText,
   AlertCircle,
   Scissors,
   DollarSign,
   Home,
   Plus,
+  CreditCard, // ícone fiados
 } from "lucide-react";
-// ✅ Importação da API centralizada
 import api from "../../services/api";
 
 const BarberDashboard = () => {
@@ -28,7 +27,6 @@ const BarberDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // ✅ CORREÇÃO API: Buscar agendamentos do barbeiro
   const fetchAppointments = async () => {
     try {
       setLoading(true);
@@ -58,57 +56,37 @@ const BarberDashboard = () => {
 
   useEffect(() => {
     fetchAppointments();
-    // Recarregar a cada 30 segundos
     const interval = setInterval(fetchAppointments, 30000);
     return () => clearInterval(interval);
   }, []);
 
-  // ✅ CORREÇÃO API: Atualizar status do agendamento
   const handleStatusChange = async (id, newStatus) => {
     try {
       const token = localStorage.getItem("authToken");
-      
-      if (!token) {
-        setError("❌ Você precisa estar logado");
-        return;
-      }
+      if (!token) { setError("❌ Você precisa estar logado"); return; }
 
-      const data = await api.updateAgendamentoBarbeiro(
-        id,
-        { status: newStatus },
-        token
-      );
+      const data = await api.updateAgendamentoBarbeiro(id, { status: newStatus }, token);
 
       if (data.success) {
         setAppointments((prev) =>
-          prev.map((app) =>
-            app.id === id ? { ...app, status: newStatus } : app,
-          ),
+          prev.map((app) => app.id === id ? { ...app, status: newStatus } : app)
         );
         setError("");
       } else {
         setError(data.error || "❌ Erro ao atualizar status");
       }
     } catch (err) {
-      console.error("❌ Erro ao atualizar status:", err);
       setError(err.error || "❌ Erro ao atualizar status");
     }
   };
 
-  // ✅ CORREÇÃO API: Deletar agendamento
   const handleDelete = async (id) => {
     if (!window.confirm("Deseja apagar este registro permanentemente?")) return;
 
     try {
       const token = localStorage.getItem("authToken");
-      
-      if (!token) {
-        setError("❌ Você precisa estar logado");
-        return;
-      }
+      if (!token) { setError("❌ Você precisa estar logado"); return; }
 
-      // Usando a função de cancelar agendamento do cliente
-      // (ou você pode criar uma específica para barbeiro se necessário)
       const data = await api.deletarAgendamentoBarbeiro(id, token);
 
       if (data.success) {
@@ -119,87 +97,54 @@ const BarberDashboard = () => {
         setError(data.error || "❌ Erro ao deletar agendamento");
       }
     } catch (err) {
-      console.error("❌ Erro ao deletar:", err);
       setError(err.error || "❌ Erro ao deletar agendamento");
     }
   };
 
-  // ✅ Filtrar agendamentos por data e status
   const filteredAppointments = appointments.filter((app) => {
-    // Garante que a data seja tratada corretamente sem deslocamento de fuso
-    const appDate = app.data_agendamento
-      ? app.data_agendamento.split("T")[0]
-      : "";
-
+    const appDate = app.data_agendamento ? app.data_agendamento.split("T")[0] : "";
     const matchesDate = appDate === selectedDate;
-
     const statusLimpo = app.status?.toLowerCase() || "";
     const filtroLimpo = filter.toLowerCase();
-
     const matchesFilter =
       filtroLimpo === "all" ||
       (filtroLimpo === "pending" &&
-        (statusLimpo === "pending" ||
-          statusLimpo === "pendente" ||
-          statusLimpo === "confirmado")) ||
+        (statusLimpo === "pending" || statusLimpo === "pendente" || statusLimpo === "confirmado")) ||
       statusLimpo === filtroLimpo;
-
     return matchesDate && matchesFilter;
   });
 
-  // ✅ Calcular estatísticas
   const stats = {
     pending: appointments.filter((a) => {
       const s = a.status?.toLowerCase();
-      const appDate = a.data_agendamento
-        ? new Date(a.data_agendamento).toISOString().split("T")[0]
-        : "";
-      // Filtra por status pendente E pela data selecionada
-      return (
-        (s === "pending" || s === "pendente" || s === "confirmado") &&
-        appDate === selectedDate
-      );
+      const appDate = a.data_agendamento ? new Date(a.data_agendamento).toISOString().split("T")[0] : "";
+      return (s === "pending" || s === "pendente" || s === "confirmado") && appDate === selectedDate;
     }).length,
-
     completed: appointments.filter((a) => {
       const s = a.status?.toLowerCase();
-      const appDate = a.data_agendamento
-        ? new Date(a.data_agendamento).toISOString().split("T")[0]
-        : "";
-      // Filtra por status concluído E pela data selecionada
-      return (
-        (s === "completed" || s === "concluído") && appDate === selectedDate
-      );
+      const appDate = a.data_agendamento ? new Date(a.data_agendamento).toISOString().split("T")[0] : "";
+      return (s === "completed" || s === "concluído") && appDate === selectedDate;
     }).length,
-
     totalToday: appointments
       .filter((a) => {
         const s = a.status?.toLowerCase();
-        const appDate = a.data_agendamento
-          ? new Date(a.data_agendamento).toISOString().split("T")[0]
-          : "";
-        return (
-          (s === "completed" || s === "concluído") && appDate === selectedDate
-        );
+        const appDate = a.data_agendamento ? new Date(a.data_agendamento).toISOString().split("T")[0] : "";
+        return (s === "completed" || s === "concluído") && appDate === selectedDate;
       })
       .reduce((acc, curr) => acc + (Number(curr.valor_total) || 0), 0),
   };
 
-  // ✅ Helpers
   const getStatusClass = (status) => {
     const s = status?.toLowerCase();
     if (s === "completed" || s === "concluído") return "status-completed";
     if (s === "cancelled" || s === "cancelado") return "status-cancelled";
-    return "status-pending"; // Para 'pending', 'pendente' ou 'confirmado'
+    return "status-pending";
   };
 
   const formatDate = (dateString) => {
     if (!dateString) return "--/--/--";
-    try {
-      return new Date(dateString).toLocaleDateString("pt-BR");
-    } catch {
-      return "--/--/--";
-    }
+    try { return new Date(dateString).toLocaleDateString("pt-BR"); }
+    catch { return "--/--/--"; }
   };
 
   const getStatusLabel = (status) => {
@@ -223,34 +168,39 @@ const BarberDashboard = () => {
     <div className="dashboard-container">
       {/* HEADER */}
       <header className="dashboard-header">
-        <button
-          onClick={() => navigate("/")}
-          className="btn-home"
-          title="Voltar"
-        >
+        <button onClick={() => navigate("/")} className="btn-home" title="Voltar">
           <Home size={28} />
         </button>
 
         <div className="header-content">
-          <div className="logo-icon">
-            <Scissors size={40} />
-          </div>
+          <div className="logo-icon"><Scissors size={40} /></div>
           <div>
-            <h1>
-              Painel do <span>Barbeiro</span>
-            </h1>
+            <h1>Painel do <span>Barbeiro</span></h1>
             <p>Gestão de Clientes e Serviços</p>
           </div>
         </div>
 
-        <button
-          onClick={() => navigate("/agendamento-barbeiro")}
-          className="btn-novo-agendamento"
-          title="Novo agendamento"
-        >
-          <Plus size={24} />
-          <span>Novo</span>
-        </button>
+        {/* ✅ BOTÕES DO HEADER */}
+        <div className="header-actions">
+          {/* Botão Fiados com contador */}
+          <button
+            onClick={() => navigate("/fiados")}
+            className="btn-fiados"
+            title="Fiados"
+          >
+            <CreditCard size={20} />
+            <span>Fiados</span>
+          </button>
+
+          <button
+            onClick={() => navigate("/agendamento-barbeiro")}
+            className="btn-novo-agendamento"
+            title="Novo agendamento"
+          >
+            <Plus size={24} />
+            <span>Novo</span>
+          </button>
+        </div>
       </header>
 
       {/* ERROR BANNER */}
@@ -258,9 +208,7 @@ const BarberDashboard = () => {
         <div className="error-banner">
           <AlertCircle size={18} />
           <p>{error}</p>
-          <button onClick={() => setError("")} className="error-close">
-            &times;
-          </button>
+          <button onClick={() => setError("")} className="error-close">&times;</button>
         </div>
       )}
 
@@ -276,9 +224,7 @@ const BarberDashboard = () => {
         </div>
         <div className="stat-card">
           <p className="stat-label">💰 Faturamento</p>
-          <p className="stat-value stat-revenue">
-            R$ {stats.totalToday.toFixed(2)}
-          </p>
+          <p className="stat-value stat-revenue">R$ {stats.totalToday.toFixed(2)}</p>
         </div>
       </div>
 
@@ -316,33 +262,25 @@ const BarberDashboard = () => {
         {filteredAppointments.length > 0 ? (
           filteredAppointments.map((app) => (
             <div key={app.id} className="appointment-card">
-              {/* Card Header */}
               <div className="card-header">
                 <span className={`status-tag ${getStatusClass(app.status)}`}>
                   {getStatusLabel(app.status)}
                 </span>
-                <button
-                  onClick={() => handleDelete(app.id)}
-                  className="btn-delete"
-                  title="Excluir permanentemente"
-                >
+                <button onClick={() => handleDelete(app.id)} className="btn-delete" title="Excluir permanentemente">
                   <Trash2 size={16} />
                 </button>
               </div>
 
-              {/* Client Info */}
               <div className="card-title">
                 <User size={16} />
                 <span>{app.cliente_nome || "Cliente"}</span>
               </div>
               <p className="card-subtitle">{app.servico_nome || "Serviço"}</p>
 
-              {/* WhatsApp */}
               {app.cliente_whatsapp && (
                 <p className="card-whatsapp">📱 {app.cliente_whatsapp}</p>
               )}
 
-              {/* Date & Time */}
               <div className="card-info">
                 <div className="card-info-item">
                   <Calendar size={14} />
@@ -350,56 +288,29 @@ const BarberDashboard = () => {
                 </div>
                 <div className="card-info-item">
                   <Clock size={14} />
-                  <span className="time-bold">
-                    {app.horario_agendamento || "--:--"}
-                  </span>
+                  <span className="time-bold">{app.horario_agendamento || "--:--"}</span>
                 </div>
               </div>
 
-              {/* Price */}
               <div className="price-tag">
                 <DollarSign size={14} />
                 <span>R$ {Number(app.valor_total || 0).toFixed(2)}</span>
               </div>
 
-              {/* Actions */}
-              <div
-                className={`card-actions ${app.status !== "pending" ? "disabled" : ""}`}
-              >
+              <div className={`card-actions ${app.status !== "pending" ? "disabled" : ""}`}>
                 {app.status === "pending" ? (
                   <>
-                    <button
-                      onClick={() => handleStatusChange(app.id, "completed")}
-                      className="btn-status btn-complete"
-                      title="Marcar como concluído"
-                    >
+                    <button onClick={() => handleStatusChange(app.id, "completed")} className="btn-status btn-complete" title="Marcar como concluído">
                       <CheckCircle size={14} />
                       <span>Concluir</span>
                     </button>
-                    <button
-                      onClick={() => handleStatusChange(app.id, "cancelled")}
-                      className="btn-status btn-cancel"
-                      title="Cancelar agendamento"
-                    >
+                    <button onClick={() => handleStatusChange(app.id, "cancelled")} className="btn-status btn-cancel" title="Cancelar agendamento">
                       <XCircle size={14} />
                       <span>Cancelar</span>
                     </button>
                   </>
-                ) : app.status === "completed" ? (
-                  <button
-                    onClick={() => handleStatusChange(app.id, "pending")}
-                    className="btn-status btn-pending"
-                    title="Voltar para pendente"
-                  >
-                    <Clock size={14} />
-                    <span>Voltar para Pendente</span>
-                  </button>
                 ) : (
-                  <button
-                    onClick={() => handleStatusChange(app.id, "pending")}
-                    className="btn-status btn-pending"
-                    title="Voltar para pendente"
-                  >
+                  <button onClick={() => handleStatusChange(app.id, "pending")} className="btn-status btn-pending" title="Voltar para pendente">
                     <Clock size={14} />
                     <span>Voltar para Pendente</span>
                   </button>
@@ -411,9 +322,7 @@ const BarberDashboard = () => {
           <div className="empty-state">
             <AlertCircle size={48} />
             <p>Nenhum agendamento encontrado para este dia ou filtro.</p>
-            <button onClick={fetchAppointments} className="btn-retry">
-              Tentar novamente
-            </button>
+            <button onClick={fetchAppointments} className="btn-retry">Tentar novamente</button>
           </div>
         )}
       </div>

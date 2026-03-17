@@ -27,10 +27,8 @@ export const apiCall = async (endpoint, options = {}) => {
 
     console.log(`📊 [API] Status da resposta: ${response.status}`);
 
-    // ✅ Tratamento de erro 403 - Token expirado ou sem permissão
     if (response.status === 403) {
       console.warn("⚠️ Acesso negado ou Token expirado");
-      // Opcional: localStorage.removeItem("authToken");
       throw {
         error: "❌ Sessão inválida ou sem permissão. Por favor, refaça o login.",
         status: 403
@@ -62,7 +60,6 @@ export const apiCall = async (endpoint, options = {}) => {
   } catch (error) {
     console.error(`❌ [API] Erro em ${endpoint}:`, error);
 
-    // Erros de conexão/rede
     if (error.message === "Failed to fetch" || error.name === "TypeError") {
       throw {
         error: "🔴 Não foi possível conectar ao servidor. Verifique se o backend está rodando no Render.",
@@ -344,6 +341,38 @@ export const deleteServico = async (servicoId, adminToken) => {
   });
 };
 
+// ==================== FIADOS ====================
+
+export const fetchFiados = async (token) => {
+  return apiCall("/fiados", {
+    method: "GET",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+};
+
+export const criarFiado = async (fiado, token) => {
+  return apiCall("/fiados", {
+    method: "POST",
+    body: JSON.stringify(fiado),
+    headers: { Authorization: `Bearer ${token}` },
+  });
+};
+
+export const updateFiado = async (id, body, token) => {
+  return apiCall(`/fiados/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+    headers: { Authorization: `Bearer ${token}` },
+  });
+};
+
+export const deletarFiado = async (id, token) => {
+  return apiCall(`/fiados/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+};
+
 // ==================== EXPORTS ====================
 
 const api = {
@@ -380,7 +409,11 @@ const api = {
   createServico,
   updateServico,
   deleteServico,
-
+  // Fiados
+  fetchFiados,
+  criarFiado,
+  updateFiado,
+  deletarFiado,
 };
 
 export default api;
