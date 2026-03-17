@@ -33,6 +33,11 @@ import Platinado from "../../icons/Servicos/Platinado.jpeg";
 import Social from "../../icons/Servicos/Social.jpeg";
 import LuzesBranca from "../../icons/Servicos/LuzesBranca.jpeg";
 
+// ✅ Helper de data SEM conversão de timezone
+const toLocalDateString = (date) => {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+};
+
 const FormBarberDashboard = () => {
   const navigate = useNavigate();
 
@@ -67,15 +72,13 @@ const FormBarberDashboard = () => {
 
   const ServicosConfig = {
     1: { img: LuzesBranca, style: { objectPosition: "center" } },
-    // 2: { img: LuzesComum,  style: {objectPosition: "center"}},
     3: { img: Platinado, style: { objectPosition: "center" } },
     4: { img: Degrade, style: { objectPosition: "center" } },
     5: { img: Social, style: { objectPosition: "center 20%" } },
-    // 6: {img: ComboSocial, style: {objectPosition: "center"}},
-    // 7: {img: ComboDegrade, style: {objectPosition: "center"}}
     8: { img: Selagem, style: { objectPosition: "center 25%" } },
   };
-  // ✅ CORREÇÃO API: Buscar serviços
+
+  // ✅ Buscar serviços
   useEffect(() => {
     const buscarServicos = async () => {
       try {
@@ -94,7 +97,7 @@ const FormBarberDashboard = () => {
     buscarServicos();
   }, []);
 
-  // ✅ CORREÇÃO API: Buscar horários ocupados
+  // ✅ Buscar horários ocupados
   const buscarAgendamentosOcupados = async (data) => {
     try {
       const data_resp = await api.fetchHorariosOcupados(data);
@@ -106,7 +109,7 @@ const FormBarberDashboard = () => {
     }
   };
 
-  // ✅ Lógica de horários (Mantida exatamente como a sua)
+  // ✅ Lógica de horários
   const getHorariosDisponiveis = (data) => {
     if (!data) return [];
     const diaDaSemana = new Date(data.replace(/-/g, "/")).getDay();
@@ -195,7 +198,7 @@ const FormBarberDashboard = () => {
     }));
   };
 
-  // ✅ CORREÇÃO API: Enviar agendamento manual
+  // ✅ Enviar agendamento manual
   const handleSubmit = async () => {
     if (
       !formData.nome ||
@@ -252,14 +255,16 @@ const FormBarberDashboard = () => {
     }
   };
 
-  // --- RENDEREIZAÇÃO (JSX MANTIDO ORIGINAL) ---
   const servicoAtual = servicos.find(
     (s) => s.id === parseInt(formData.servico),
   );
-  const hoje = new Date().toISOString().split("T")[0];
+
+  // ✅ Datas sem timezone — usa horário local
+  const hoje = toLocalDateString(new Date());
   const diaMax = new Date();
   diaMax.setDate(diaMax.getDate() + 30);
-  const diaMaxString = diaMax.toISOString().split("T")[0];
+  const diaMaxString = toLocalDateString(diaMax);
+
   const diaFechado = getDiaFechado(formData.data);
   const horariosDisponiveis = getHorariosDisponiveis(formData.data);
   const total = calcularTotal();
@@ -517,7 +522,8 @@ const FormBarberDashboard = () => {
                 <div className="resumo-item">
                   <span className="resumo-label">Data:</span>
                   <span className="resumo-value">
-                    {new Date(formData.data).toLocaleDateString("pt-BR")}
+                    {/* ✅ Sem UTC — split manual */}
+                    {formData.data.split("-").reverse().join("/")}
                   </span>
                 </div>
               )}

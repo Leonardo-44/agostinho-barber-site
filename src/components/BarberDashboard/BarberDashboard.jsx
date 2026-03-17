@@ -13,17 +13,28 @@ import {
   DollarSign,
   Home,
   Plus,
-  CreditCard, // ícone fiados
+  CreditCard,
 } from "lucide-react";
 import api from "../../services/api";
+
+// ✅ Helper de data SEM conversão de timezone
+// Extrai apenas a parte "YYYY-MM-DD" da string sem passar pelo construtor Date
+const toLocalDate = (dateString) => {
+  if (!dateString) return "";
+  return dateString.split("T")[0]; // "2026-03-17T03:00:00Z" → "2026-03-17"
+};
+
+// ✅ Data de hoje no horário local (sem UTC)
+const getTodayLocal = () => {
+  const hoje = new Date();
+  return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(hoje.getDate()).padStart(2, "0")}`;
+};
 
 const BarberDashboard = () => {
   const navigate = useNavigate();
   const [appointments, setAppointments] = useState([]);
   const [filter, setFilter] = useState("pending");
-  const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split("T")[0],
-  );
+  const [selectedDate, setSelectedDate] = useState(getTodayLocal()); // ✅ Sem UTC
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -101,8 +112,9 @@ const BarberDashboard = () => {
     }
   };
 
+  // ✅ Filtro usando toLocalDate — sem UTC
   const filteredAppointments = appointments.filter((app) => {
-    const appDate = app.data_agendamento ? app.data_agendamento.split("T")[0] : "";
+    const appDate = toLocalDate(app.data_agendamento);
     const matchesDate = appDate === selectedDate;
     const statusLimpo = app.status?.toLowerCase() || "";
     const filtroLimpo = filter.toLowerCase();
@@ -114,22 +126,29 @@ const BarberDashboard = () => {
     return matchesDate && matchesFilter;
   });
 
+  // ✅ Stats usando toLocalDate — sem UTC
   const stats = {
     pending: appointments.filter((a) => {
       const s = a.status?.toLowerCase();
-      const appDate = a.data_agendamento ? new Date(a.data_agendamento).toISOString().split("T")[0] : "";
-      return (s === "pending" || s === "pendente" || s === "confirmado") && appDate === selectedDate;
+      return (
+        (s === "pending" || s === "pendente" || s === "confirmado") &&
+        toLocalDate(a.data_agendamento) === selectedDate
+      );
     }).length,
     completed: appointments.filter((a) => {
       const s = a.status?.toLowerCase();
-      const appDate = a.data_agendamento ? new Date(a.data_agendamento).toISOString().split("T")[0] : "";
-      return (s === "completed" || s === "concluído") && appDate === selectedDate;
+      return (
+        (s === "completed" || s === "concluído") &&
+        toLocalDate(a.data_agendamento) === selectedDate
+      );
     }).length,
     totalToday: appointments
       .filter((a) => {
         const s = a.status?.toLowerCase();
-        const appDate = a.data_agendamento ? new Date(a.data_agendamento).toISOString().split("T")[0] : "";
-        return (s === "completed" || s === "concluído") && appDate === selectedDate;
+        return (
+          (s === "completed" || s === "concluído") &&
+          toLocalDate(a.data_agendamento) === selectedDate
+        );
       })
       .reduce((acc, curr) => acc + (Number(curr.valor_total) || 0), 0),
   };
@@ -141,10 +160,12 @@ const BarberDashboard = () => {
     return "status-pending";
   };
 
+  // ✅ formatDate sem UTC
   const formatDate = (dateString) => {
     if (!dateString) return "--/--/--";
-    try { return new Date(dateString).toLocaleDateString("pt-BR"); }
-    catch { return "--/--/--"; }
+    const part = dateString.split("T")[0];
+    const [year, month, day] = part.split("-");
+    return `${day}/${month}/${year}`;
   };
 
   const getStatusLabel = (status) => {
@@ -180,9 +201,7 @@ const BarberDashboard = () => {
           </div>
         </div>
 
-        {/* ✅ BOTÕES DO HEADER */}
         <div className="header-actions">
-          {/* Botão Fiados com contador */}
           <button
             onClick={() => navigate("/fiados")}
             className="btn-fiados"

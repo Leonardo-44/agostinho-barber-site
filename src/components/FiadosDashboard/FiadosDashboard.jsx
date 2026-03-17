@@ -17,22 +17,18 @@ import api from "../../services/api";
 import "./FiadosDashboard.css";
 
 // ─── Helper de data SEM conversão de timezone ─────────────────────────────────
-// Problema: new Date("2025-07-17") interpreta como UTC → no Brasil vira 16/07
-// Solução: parsear a string manualmente, sem passar pelo construtor Date
 const formatDate = (dateString) => {
   if (!dateString) return "--";
-  const part = dateString.split("T")[0]; // "2025-07-17T03:00:00Z" → "2025-07-17"
+  const part = dateString.split("T")[0];
   const [year, month, day] = part.split("-");
   if (!year || !month || !day) return "--";
-  return `${day}/${month}/${year}`; // "17/07/2025" ✅
+  return `${day}/${month}/${year}`;
 };
 
-// Dias restantes também sem problema de timezone
 const diasRestantes = (dateString) => {
   if (!dateString) return null;
   const part = dateString.split("T")[0];
   const [year, month, day] = part.split("-").map(Number);
-  // new Date(year, month-1, day) → cria no horário LOCAL (sem UTC)
   const vencimento = new Date(year, month - 1, day);
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
@@ -42,7 +38,6 @@ const diasRestantes = (dateString) => {
   return `Vence em ${diff}d`;
 };
 
-// Verifica atraso sem problema de timezone
 const isAtrasado = (fiado) => {
   if (fiado.status === "pago") return false;
   if (!fiado.data_vencimento) return false;
@@ -72,7 +67,6 @@ const FiadosDashboard = () => {
   });
   const [submitting, setSubmitting] = useState(false);
 
-  // ─── Buscar nome do barbeiro logado ────────────────────────────────────────
   useEffect(() => {
     const fetchBarbeiro = async () => {
       try {
@@ -87,7 +81,6 @@ const FiadosDashboard = () => {
     fetchBarbeiro();
   }, []);
 
-  // ─── Buscar fiados ──────────────────────────────────────────────────────────
   const fetchFiados = async () => {
     try {
       setLoading(true);
@@ -113,7 +106,6 @@ const FiadosDashboard = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // ─── Marcar como pago ───────────────────────────────────────────────────────
   const handleMarcarPago = async (id) => {
     try {
       const token = localStorage.getItem("authToken");
@@ -128,7 +120,21 @@ const FiadosDashboard = () => {
     }
   };
 
-  // ─── Deletar fiado ──────────────────────────────────────────────────────────
+  // ✅ Novo: Voltar para pendente
+  const handleVoltarPendente = async (id) => {
+    try {
+      const token = localStorage.getItem("authToken");
+      const data = await api.updateFiado(id, { status: "pendente" }, token);
+      if (data.success) {
+        setFiados((prev) => prev.map((f) => f.id === id ? { ...f, status: "pendente" } : f));
+      } else {
+        setError(data.error || "❌ Erro ao atualizar fiado");
+      }
+    } catch (err) {
+      setError(err.error || "❌ Erro ao atualizar fiado");
+    }
+  };
+
   const handleDelete = async (id) => {
     if (!window.confirm("Deseja apagar este fiado permanentemente?")) return;
     try {
@@ -144,7 +150,6 @@ const FiadosDashboard = () => {
     }
   };
 
-  // ─── Criar novo fiado ───────────────────────────────────────────────────────
   const handleSubmit = async () => {
     if (!form.cliente_nome || !form.valor) {
       setError("❌ Preencha o nome do cliente e o valor");
@@ -169,7 +174,6 @@ const FiadosDashboard = () => {
     }
   };
 
-  // ─── Helpers ────────────────────────────────────────────────────────────────
   const getStatusEfetivo = (fiado) => {
     const s = fiado.status?.toLowerCase();
     if (s === "pago") return "pago";
@@ -188,13 +192,11 @@ const FiadosDashboard = () => {
     return avatarColors[name.charCodeAt(0) % avatarColors.length];
   };
 
-  // ─── Filtrar ─────────────────────────────────────────────────────────────────
   const filteredFiados = fiados.filter((f) => {
     if (filter === "all") return true;
     return getStatusEfetivo(f) === filter;
   });
 
-  // ─── Estatísticas ────────────────────────────────────────────────────────────
   const stats = {
     totalAberto: fiados.filter((f) => f.status !== "pago").reduce((acc, f) => acc + Number(f.valor || 0), 0),
     atrasados: fiados.filter((f) => isAtrasado(f)).length,
@@ -218,7 +220,6 @@ const FiadosDashboard = () => {
     <div className="fiados-container">
       {/* HEADER */}
       <header className="fiados-header">
-        {/* ✅ Rota correta do App.jsx: /painel */}
         <button onClick={() => navigate("/painel")} className="btn-home" title="Voltar ao painel">
           <ArrowLeft size={24} />
         </button>
@@ -292,7 +293,7 @@ const FiadosDashboard = () => {
             {atrasados.map((f) => (
               <FiadoCard key={f.id} fiado={f} statusEfetivo="atrasado"
                 getInitials={getInitials} getAvatarColor={getAvatarColor}
-                onPago={handleMarcarPago} onDelete={handleDelete} />
+                onPago={handleMarcarPago} onVoltarPendente={handleVoltarPendente} onDelete={handleDelete} />
             ))}
           </>
         )}
@@ -303,7 +304,7 @@ const FiadosDashboard = () => {
             {pendentes.map((f) => (
               <FiadoCard key={f.id} fiado={f} statusEfetivo="pendente"
                 getInitials={getInitials} getAvatarColor={getAvatarColor}
-                onPago={handleMarcarPago} onDelete={handleDelete} />
+                onPago={handleMarcarPago} onVoltarPendente={handleVoltarPendente} onDelete={handleDelete} />
             ))}
           </>
         )}
@@ -314,7 +315,7 @@ const FiadosDashboard = () => {
             {pagos.map((f) => (
               <FiadoCard key={f.id} fiado={f} statusEfetivo="pago"
                 getInitials={getInitials} getAvatarColor={getAvatarColor}
-                onPago={handleMarcarPago} onDelete={handleDelete} />
+                onPago={handleMarcarPago} onVoltarPendente={handleVoltarPendente} onDelete={handleDelete} />
             ))}
           </>
         )}
@@ -392,7 +393,7 @@ const FiadosDashboard = () => {
 };
 
 // ─── Sub-componente FiadoCard ─────────────────────────────────────────────────
-const FiadoCard = ({ fiado, statusEfetivo, getInitials, getAvatarColor, onPago, onDelete }) => {
+const FiadoCard = ({ fiado, statusEfetivo, getInitials, getAvatarColor, onPago, onVoltarPendente, onDelete }) => {
   const borderMap = { atrasado: "card-border-red", pendente: "card-border-amber", pago: "card-border-green" };
   const badgeMap  = {
     atrasado: <span className="badge badge-atr">🔴 Atrasado</span>,
@@ -428,13 +429,11 @@ const FiadoCard = ({ fiado, statusEfetivo, getInitials, getAvatarColor, onPago, 
       <div className="card-info">
         <div className="card-info-item">
           <Calendar size={13} />
-          {/* ✅ formatDate sem UTC — usa split manual */}
           <span>Fiado em {formatDate(fiado.data_fiado || fiado.created_at)}</span>
         </div>
         {fiado.data_vencimento && (
           <div className={`card-info-item ${statusEfetivo === "atrasado" ? "info-red" : ""}`}>
             <Clock size={13} />
-            {/* ✅ diasRestantes sem UTC */}
             <span>{diasRestantes(fiado.data_vencimento)}</span>
           </div>
         )}
@@ -445,12 +444,24 @@ const FiadoCard = ({ fiado, statusEfetivo, getInitials, getAvatarColor, onPago, 
           <DollarSign size={14} />
           <span>R$ {Number(fiado.valor || 0).toFixed(2)}</span>
         </div>
-        {statusEfetivo !== "pago" && (
-          <button onClick={() => onPago(fiado.id)} className="btn-pago">
-            <CheckCircle size={14} />
-            Marcar como pago
-          </button>
-        )}
+
+        <div className="card-actions">
+          {/* ✅ Se não está pago: mostrar botão "Marcar como pago" */}
+          {statusEfetivo !== "pago" && (
+            <button onClick={() => onPago(fiado.id)} className="btn-pago">
+              <CheckCircle size={14} />
+              Marcar como pago
+            </button>
+          )}
+
+          {/* ✅ Se está pago: mostrar botão "Voltar para Pendente" */}
+          {statusEfetivo === "pago" && (
+            <button onClick={() => onVoltarPendente(fiado.id)} className="btn-status btn-pending">
+              <Clock size={14} />
+              Voltar para Pendente
+            </button>
+          )}
+        </div>
       </div>
 
       {fiado.observacao && (
