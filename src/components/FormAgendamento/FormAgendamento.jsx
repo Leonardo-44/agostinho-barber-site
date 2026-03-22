@@ -28,9 +28,11 @@ import Desenho from "../../icons/Adicionais/Desenho.png";
 import Selagem from "../../icons/Servicos/Selagem.jpeg";
 import Degrade from "../../icons/Servicos/Degrade.jpeg";
 import Platinado from "../../icons/Servicos/Platinado.jpeg";
-import Social from "../../icons/Servicos/Social.jpeg";
+import ComboSocial from "../../icons/Servicos/ComboSocial.jpeg";
 import LuzesBranca from "../../icons/Servicos/LuzesBranca.jpeg";
-
+import LuzesComum from "../../icons/Servicos/LuzesComum.jpeg";
+import ComboDegrade from "../../icons/Servicos/ComboDegrade.jpeg";
+import Social from "../../icons/Servicos/Social.jpeg";
 
 const FormAgendamento = () => {
   const navigate = useNavigate();
@@ -65,12 +67,12 @@ const FormAgendamento = () => {
 
     const ServicosConfig = {
       1: { img: LuzesBranca, style: { objectPosition: "center" } },
-      // 2: { img: LuzesComum,  style: {objectPosition: "center"}},
+      2: { img: LuzesComum,  style: {objectPosition: "center"}},
       3: { img: Platinado, style: { objectPosition: "center" } },
       4: { img: Degrade, style: { objectPosition: "center" } },
-      5: { img: Social, style: { objectPosition: "center 20%" } },
-      // 6: {img: ComboSocial, style: {objectPosition: "center"}},
-      // 7: {img: ComboDegrade, style: {objectPosition: "center"}}
+      5: { img: Social, style: {objectPosition: "center"}},
+      6: {img: ComboSocial, style: { objectPosition: "center 20%" } },
+      7: {img: ComboDegrade, style: {objectPosition: "center 40%"}},
       8: { img: Selagem, style: { objectPosition: "center 25%" } },
     };
 
@@ -86,7 +88,7 @@ const FormAgendamento = () => {
             const nomeCompleto =
               `${dataPerfil.cliente?.nome || ""} ${dataPerfil.cliente?.sobrenome || ""}`.trim();
             setUsuarioNome(nomeCompleto || "Cliente App");
-          } catch (err) {
+          } catch {
             console.warn("⚠️ Token inválido ou erro ao carregar perfil.");
           }
         }
@@ -140,13 +142,19 @@ const FormAgendamento = () => {
       }
     };
 
-    if (diaDaSemana >= 2 && diaDaSemana <= 4) {
-      adicionarHorarios(7, 11, 10, 50);
-      adicionarHorarios(13, 19, 0, 50);
-    } else {
-      adicionarHorarios(7, 11, 10, 50);
-      adicionarHorarios(13, 21, 50, 50);
-    }
+    if (diaDaSemana === 2 || diaDaSemana === 3) {
+  // Terça e Quarta: até 19:40
+  adicionarHorarios(7, 11, 10, 50);
+  adicionarHorarios(13, 19, 40, 50);
+} else if (diaDaSemana === 4) {
+  // Quinta: até 20:30
+  adicionarHorarios(7, 11, 10, 50);
+  adicionarHorarios(13, 20, 30, 50);
+} else {
+  // Sexta e Sábado: até 21:50
+  adicionarHorarios(7, 11, 10, 50);
+  adicionarHorarios(13, 21, 50, 50);
+}
     return horarios;
   };
 

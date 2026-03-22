@@ -373,6 +373,25 @@ export const deletarFiado = async (id, token) => {
   });
 };
 
+export const fetchDiasExcecao = async () => {
+  return apiCall("/dias-excecao", { method: "GET" });
+};
+
+export const adicionarDiaExcecao = async (data, token) => {
+  return apiCall("/dias-excecao", {
+    method: "POST",
+    body: JSON.stringify({ data }),
+    headers: { Authorization: `Bearer ${token}` },
+  });
+};
+
+export const removerDiaExcecao = async (data, token) => {
+  return apiCall(`/dias-excecao/${data}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+};
+
 // ==================== EXPORTS ====================
 
 const api = {
@@ -414,6 +433,10 @@ const api = {
   criarFiado,
   updateFiado,
   deletarFiado,
+  // Dias de exceção
+  fetchDiasExcecao,
+  adicionarDiaExcecao,
+  removerDiaExcecao,
 };
 
 export default api;

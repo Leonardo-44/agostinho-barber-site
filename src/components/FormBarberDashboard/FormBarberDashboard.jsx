@@ -30,8 +30,11 @@ import Desenho from "../../icons/Adicionais/Desenho.png";
 import Selagem from "../../icons/Servicos/Selagem.jpeg";
 import Degrade from "../../icons/Servicos/Degrade.jpeg";
 import Platinado from "../../icons/Servicos/Platinado.jpeg";
-import Social from "../../icons/Servicos/Social.jpeg";
+import ComboSocial from "../../icons/Servicos/ComboSocial.jpeg";
 import LuzesBranca from "../../icons/Servicos/LuzesBranca.jpeg";
+import LuzesComum from "../../icons/Servicos/LuzesComum.jpeg";
+import ComboDegrade from "../../icons/Servicos/ComboDegrade.jpeg";
+import Social from "../../icons/Servicos/Social.jpeg";
 
 // ✅ Helper de data SEM conversão de timezone
 const toLocalDateString = (date) => {
@@ -56,6 +59,7 @@ const FormBarberDashboard = () => {
   const [servicos, setServicos] = useState([]);
   const [agendamentosOcupados, setAgendamentosOcupados] = useState([]);
   const [loadingServicos, setLoadingServicos] = useState(true);
+  const [diasExcecao, setDiasExcecao] = useState([]);
 
   const adicionais = [
     { id: 1, nome: "Matização", preco: 8, icon: Matizacao },
@@ -72,29 +76,34 @@ const FormBarberDashboard = () => {
 
   const ServicosConfig = {
     1: { img: LuzesBranca, style: { objectPosition: "center" } },
+    2: { img: LuzesComum, style: { objectPosition: "center" } },
     3: { img: Platinado, style: { objectPosition: "center" } },
     4: { img: Degrade, style: { objectPosition: "center" } },
-    5: { img: Social, style: { objectPosition: "center 20%" } },
+    5: { img: Social, style: { objectPosition: "center" } },
+    6: { img: ComboSocial, style: { objectPosition: "center 20%" } },
+    7: { img: ComboDegrade, style: { objectPosition: "center 40%" } },
     8: { img: Selagem, style: { objectPosition: "center 25%" } },
   };
 
   // ✅ Buscar serviços
   useEffect(() => {
-    const buscarServicos = async () => {
+    const buscarDados = async () => {
       try {
         setLoadingServicos(true);
-        const data = await api.fetchServicos();
-        if (data.success) {
-          setServicos(data.servicos);
-        }
+        const [dataServicos, dataExcecao] = await Promise.all([
+          api.fetchServicos(),
+          api.fetchDiasExcecao(),
+        ]);
+        if (dataServicos.success) setServicos(dataServicos.servicos);
+        if (dataExcecao.success) setDiasExcecao(dataExcecao.dias || []);
       } catch (err) {
-        console.error("Erro ao buscar serviços:", err);
+        console.error("Erro ao buscar dados:", err);
         setError("❌ Erro ao conectar com o servidor");
       } finally {
         setLoadingServicos(false);
       }
     };
-    buscarServicos();
+    buscarDados();
   }, []);
 
   // ✅ Buscar horários ocupados
@@ -113,7 +122,8 @@ const FormBarberDashboard = () => {
   const getHorariosDisponiveis = (data) => {
     if (!data) return [];
     const diaDaSemana = new Date(data.replace(/-/g, "/")).getDay();
-    if (diaDaSemana === 0 || diaDaSemana === 1) return [];
+    const ehExcecao = diasExcecao.includes(data);
+    if ((diaDaSemana === 0 || diaDaSemana === 1) && !ehExcecao) return [];
 
     let horarios = [];
     const gerar = (inicio, fimH, fimM, intervalo) => {
@@ -131,9 +141,12 @@ const FormBarberDashboard = () => {
       }
     };
 
-    if (diaDaSemana >= 2 && diaDaSemana <= 4) {
+    if (diaDaSemana === 2 || diaDaSemana === 3) {
       gerar(7, 11, 10, 50);
-      gerar(13, 18, 50, 50);
+      gerar(13, 19, 40, 50);
+    } else if (diaDaSemana === 4) {
+      gerar(7, 11, 10, 50);
+      gerar(13, 20, 30, 50);
     } else {
       gerar(7, 11, 10, 50);
       gerar(13, 21, 50, 50);
@@ -144,7 +157,9 @@ const FormBarberDashboard = () => {
   const getDiaFechado = (data) => {
     if (!data) return false;
     const diaDaSemana = new Date(data.replace(/-/g, "/")).getDay();
-    return diaDaSemana === 0 || diaDaSemana === 1;
+    return (
+      (diaDaSemana === 0 || diaDaSemana === 1) && !diasExcecao.includes(data)
+    );
   };
 
   const formatarWhatsApp = (valor) => {
@@ -262,7 +277,7 @@ const FormBarberDashboard = () => {
   // ✅ Datas sem timezone — usa horário local
   const hoje = toLocalDateString(new Date());
   const diaMax = new Date();
-  diaMax.setDate(diaMax.getDate() + 30);
+  diaMax.setDate(diaMax.getDate() + 365);
   const diaMaxString = toLocalDateString(diaMax);
 
   const diaFechado = getDiaFechado(formData.data);

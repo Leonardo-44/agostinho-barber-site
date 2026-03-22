@@ -17,14 +17,11 @@ import {
 } from "lucide-react";
 import api from "../../services/api";
 
-// ✅ Helper de data SEM conversão de timezone
-// Extrai apenas a parte "YYYY-MM-DD" da string sem passar pelo construtor Date
 const toLocalDate = (dateString) => {
   if (!dateString) return "";
-  return dateString.split("T")[0]; // "2026-03-17T03:00:00Z" → "2026-03-17"
+  return dateString.split("T")[0];
 };
 
-// ✅ Data de hoje no horário local (sem UTC)
 const getTodayLocal = () => {
   const hoje = new Date();
   return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(hoje.getDate()).padStart(2, "0")}`;
@@ -34,54 +31,97 @@ const BarberDashboard = () => {
   const navigate = useNavigate();
   const [appointments, setAppointments] = useState([]);
   const [filter, setFilter] = useState("pending");
-  const [selectedDate, setSelectedDate] = useState(getTodayLocal()); // ✅ Sem UTC
+  const [selectedDate, setSelectedDate] = useState(getTodayLocal());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // ✅ Estados para dias de exceção
+  const [diasExcecao, setDiasExcecao] = useState([]);
+  const [novaExcecao, setNovaExcecao] = useState("");
+  const [loadingExcecao, setLoadingExcecao] = useState(false);
+  const [excecaoError, setExcecaoError] = useState("");
+  const [mostrarExcecao, setMostrarExcecao] = useState(false);
 
   const fetchAppointments = async () => {
     try {
       setLoading(true);
       setError("");
       const token = localStorage.getItem("authToken");
-
-      if (!token) {
-        setError("❌ Você precisa estar logado");
-        setLoading(false);
-        return;
-      }
-
+      if (!token) { setError("❌ Você precisa estar logado"); setLoading(false); return; }
       const data = await api.fetchAgendamentosDoBarbeiro(token);
-
       if (data.success) {
         setAppointments(data.agendamentos || []);
       } else {
         setError(data.error || "❌ Erro ao carregar agendamentos");
       }
     } catch (err) {
-      console.error("❌ Erro ao buscar agendamentos:", err);
       setError(err.error || "❌ Erro ao conectar com o servidor");
     } finally {
       setLoading(false);
     }
   };
 
+  // ✅ Buscar dias de exceção do banco
+  const fetchDiasExcecao = async () => {
+    try {
+      const data = await api.fetchDiasExcecao();
+      if (data.success) setDiasExcecao(data.dias || []);
+    } catch (err) {
+      console.error("Erro ao buscar dias de exceção:", err);
+    }
+  };
+
   useEffect(() => {
     fetchAppointments();
+    fetchDiasExcecao();
     const interval = setInterval(fetchAppointments, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // ✅ Adicionar dia de exceção
+  const adicionarExcecao = async () => {
+    if (!novaExcecao) return;
+    const diaDaSemana = new Date(novaExcecao.replace(/-/g, "/")).getDay();
+    if (diaDaSemana !== 0 && diaDaSemana !== 1) {
+      setExcecaoError("⚠️ Só é possível adicionar Domingos ou Segundas-feiras.");
+      return;
+    }
+    setLoadingExcecao(true);
+    setExcecaoError("");
+    try {
+      const token = localStorage.getItem("authToken");
+      const data = await api.adicionarDiaExcecao(novaExcecao, token);
+      if (data.success) {
+        setDiasExcecao((prev) => [...new Set([...prev, novaExcecao])].sort());
+        setNovaExcecao("");
+      } else {
+        setExcecaoError(data.error || "❌ Erro ao salvar dia");
+      }
+    } catch {
+      setExcecaoError("❌ Erro ao salvar dia");
+    } finally {
+      setLoadingExcecao(false);
+    }
+  };
+
+  // ✅ Remover dia de exceção
+  const removerExcecao = async (data) => {
+    try {
+      const token = localStorage.getItem("authToken");
+      const resp = await api.removerDiaExcecao(data, token);
+      if (resp.success) setDiasExcecao((prev) => prev.filter((d) => d !== data));
+    } catch {
+      setExcecaoError("❌ Erro ao remover dia");
+    }
+  };
 
   const handleStatusChange = async (id, newStatus) => {
     try {
       const token = localStorage.getItem("authToken");
       if (!token) { setError("❌ Você precisa estar logado"); return; }
-
       const data = await api.updateAgendamentoBarbeiro(id, { status: newStatus }, token);
-
       if (data.success) {
-        setAppointments((prev) =>
-          prev.map((app) => app.id === id ? { ...app, status: newStatus } : app)
-        );
+        setAppointments((prev) => prev.map((app) => app.id === id ? { ...app, status: newStatus } : app));
         setError("");
       } else {
         setError(data.error || "❌ Erro ao atualizar status");
@@ -93,13 +133,10 @@ const BarberDashboard = () => {
 
   const handleDelete = async (id) => {
     if (!window.confirm("Deseja apagar este registro permanentemente?")) return;
-
     try {
       const token = localStorage.getItem("authToken");
       if (!token) { setError("❌ Você precisa estar logado"); return; }
-
       const data = await api.deletarAgendamentoBarbeiro(id, token);
-
       if (data.success) {
         setAppointments((prev) => prev.filter((app) => app.id !== id));
         setError("");
@@ -112,7 +149,6 @@ const BarberDashboard = () => {
     }
   };
 
-  // ✅ Filtro usando toLocalDate — sem UTC
   const filteredAppointments = appointments.filter((app) => {
     const appDate = toLocalDate(app.data_agendamento);
     const matchesDate = appDate === selectedDate;
@@ -120,35 +156,24 @@ const BarberDashboard = () => {
     const filtroLimpo = filter.toLowerCase();
     const matchesFilter =
       filtroLimpo === "all" ||
-      (filtroLimpo === "pending" &&
-        (statusLimpo === "pending" || statusLimpo === "pendente" || statusLimpo === "confirmado")) ||
+      (filtroLimpo === "pending" && (statusLimpo === "pending" || statusLimpo === "pendente" || statusLimpo === "confirmado")) ||
       statusLimpo === filtroLimpo;
     return matchesDate && matchesFilter;
   });
 
-  // ✅ Stats usando toLocalDate — sem UTC
   const stats = {
     pending: appointments.filter((a) => {
       const s = a.status?.toLowerCase();
-      return (
-        (s === "pending" || s === "pendente" || s === "confirmado") &&
-        toLocalDate(a.data_agendamento) === selectedDate
-      );
+      return (s === "pending" || s === "pendente" || s === "confirmado") && toLocalDate(a.data_agendamento) === selectedDate;
     }).length,
     completed: appointments.filter((a) => {
       const s = a.status?.toLowerCase();
-      return (
-        (s === "completed" || s === "concluído") &&
-        toLocalDate(a.data_agendamento) === selectedDate
-      );
+      return (s === "completed" || s === "concluído") && toLocalDate(a.data_agendamento) === selectedDate;
     }).length,
     totalToday: appointments
       .filter((a) => {
         const s = a.status?.toLowerCase();
-        return (
-          (s === "completed" || s === "concluído") &&
-          toLocalDate(a.data_agendamento) === selectedDate
-        );
+        return (s === "completed" || s === "concluído") && toLocalDate(a.data_agendamento) === selectedDate;
       })
       .reduce((acc, curr) => acc + (Number(curr.valor_total) || 0), 0),
   };
@@ -160,7 +185,6 @@ const BarberDashboard = () => {
     return "status-pending";
   };
 
-  // ✅ formatDate sem UTC
   const formatDate = (dateString) => {
     if (!dateString) return "--/--/--";
     const part = dateString.split("T")[0];
@@ -192,7 +216,6 @@ const BarberDashboard = () => {
         <button onClick={() => navigate("/")} className="btn-home" title="Voltar">
           <Home size={28} />
         </button>
-
         <div className="header-content">
           <div className="logo-icon"><Scissors size={40} /></div>
           <div>
@@ -200,22 +223,12 @@ const BarberDashboard = () => {
             <p>Gestão de Clientes e Serviços</p>
           </div>
         </div>
-
         <div className="header-actions">
-          <button
-            onClick={() => navigate("/fiados")}
-            className="btn-fiados"
-            title="Fiados"
-          >
+          <button onClick={() => navigate("/fiados")} className="btn-fiados" title="Fiados">
             <CreditCard size={20} />
             <span>Fiados</span>
           </button>
-
-          <button
-            onClick={() => navigate("/agendamento-barbeiro")}
-            className="btn-novo-agendamento"
-            title="Novo agendamento"
-          >
+          <button onClick={() => navigate("/agendamento-barbeiro")} className="btn-novo-agendamento" title="Novo agendamento">
             <Plus size={24} />
             <span>Novo</span>
           </button>
@@ -258,7 +271,6 @@ const BarberDashboard = () => {
             className="date-picker-input"
           />
         </div>
-
         <div className="filter-button-group">
           {[
             { id: "pending", label: "⏳ Pendentes" },
@@ -276,6 +288,54 @@ const BarberDashboard = () => {
         </div>
       </div>
 
+      {/* ✅ DIAS DE EXCEÇÃO */}
+      <div className="excecao-container">
+        <button className="excecao-toggle" onClick={() => setMostrarExcecao((prev) => !prev)}>
+          <Calendar size={16} />
+          <span>Abrir dia fechado (Dom/Seg)</span>
+          <span className="excecao-badge">{diasExcecao.length}</span>
+          <span className="excecao-chevron">{mostrarExcecao ? "▲" : "▼"}</span>
+        </button>
+
+        {mostrarExcecao && (
+          <div className="excecao-body">
+            {excecaoError && <p className="excecao-error">{excecaoError}</p>}
+
+            <div className="excecao-input-row">
+              <input
+                type="date"
+                value={novaExcecao}
+                onChange={(e) => { setNovaExcecao(e.target.value); setExcecaoError(""); }}
+                className="date-picker-input"
+              />
+              <button
+                onClick={adicionarExcecao}
+                className="btn-novo-agendamento"
+                disabled={loadingExcecao || !novaExcecao}
+              >
+                <Plus size={16} />
+                {loadingExcecao ? "Salvando..." : "Adicionar"}
+              </button>
+            </div>
+
+            {diasExcecao.length === 0 ? (
+              <p className="excecao-vazio">Nenhum dia de exceção cadastrado.</p>
+            ) : (
+              <ul className="excecao-list">
+                {diasExcecao.map((d) => (
+                  <li key={d} className="excecao-item">
+                    <span>📆 {d.split("-").reverse().join("/")}</span>
+                    <button onClick={() => removerExcecao(d)} className="btn-delete" title="Remover">
+                      <Trash2 size={14} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* APPOINTMENTS GRID */}
       <div className="appointments-grid">
         {filteredAppointments.length > 0 ? (
@@ -289,17 +349,12 @@ const BarberDashboard = () => {
                   <Trash2 size={16} />
                 </button>
               </div>
-
               <div className="card-title">
                 <User size={16} />
                 <span>{app.cliente_nome || "Cliente"}</span>
               </div>
               <p className="card-subtitle">{app.servico_nome || "Serviço"}</p>
-
-              {app.cliente_whatsapp && (
-                <p className="card-whatsapp">📱 {app.cliente_whatsapp}</p>
-              )}
-
+              {app.cliente_whatsapp && <p className="card-whatsapp">📱 {app.cliente_whatsapp}</p>}
               <div className="card-info">
                 <div className="card-info-item">
                   <Calendar size={14} />
@@ -310,28 +365,23 @@ const BarberDashboard = () => {
                   <span className="time-bold">{app.horario_agendamento || "--:--"}</span>
                 </div>
               </div>
-
               <div className="price-tag">
                 <DollarSign size={14} />
                 <span>R$ {Number(app.valor_total || 0).toFixed(2)}</span>
               </div>
-
               <div className={`card-actions ${app.status !== "pending" ? "disabled" : ""}`}>
                 {app.status === "pending" ? (
                   <>
-                    <button onClick={() => handleStatusChange(app.id, "completed")} className="btn-status btn-complete" title="Marcar como concluído">
-                      <CheckCircle size={14} />
-                      <span>Concluir</span>
+                    <button onClick={() => handleStatusChange(app.id, "completed")} className="btn-status btn-complete">
+                      <CheckCircle size={14} /><span>Concluir</span>
                     </button>
-                    <button onClick={() => handleStatusChange(app.id, "cancelled")} className="btn-status btn-cancel" title="Cancelar agendamento">
-                      <XCircle size={14} />
-                      <span>Cancelar</span>
+                    <button onClick={() => handleStatusChange(app.id, "cancelled")} className="btn-status btn-cancel">
+                      <XCircle size={14} /><span>Cancelar</span>
                     </button>
                   </>
                 ) : (
-                  <button onClick={() => handleStatusChange(app.id, "pending")} className="btn-status btn-pending" title="Voltar para pendente">
-                    <Clock size={14} />
-                    <span>Voltar para Pendente</span>
+                  <button onClick={() => handleStatusChange(app.id, "pending")} className="btn-status btn-pending">
+                    <Clock size={14} /><span>Voltar para Pendente</span>
                   </button>
                 )}
               </div>
