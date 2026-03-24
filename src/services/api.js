@@ -6,8 +6,6 @@ const BASE_URL = (import.meta.env.VITE_API_URL || "https://agostinho-barber-site
 // 2. Garantimos o prefixo /api (Evita duplicidade api/api)
 const API_URL = BASE_URL.includes('/api') ? BASE_URL : `${BASE_URL}/api`;
 
-console.log("🚀 URL DE CHAMADA ATUAL:", API_URL);
-
 // ==================== FUNÇÃO BASE DE CHAMADA ====================
 
 export const apiCall = async (endpoint, options = {}) => {

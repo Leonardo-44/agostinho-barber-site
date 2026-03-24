@@ -225,6 +225,11 @@ const FormBarberDashboard = () => {
       return;
     }
 
+    if (!formData.servico && formData.adicionais.length === 0) {
+      setError("❌ Selecione pelo menos um Serviço ou Adicional!");
+      return;
+    }
+
     const apenasNumeros = formData.whatsapp.replace(/\D/g, "");
     if (apenasNumeros.length < 10) {
       setError("❌ WhatsApp inválido!");

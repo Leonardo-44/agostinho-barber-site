@@ -59,22 +59,22 @@ const FormAgendamento = () => {
     { id: 4, nome: "Hidratação", preco: 12, icon: Hidratacao },
     { id: 5, nome: "Sobrancelha", preco: 5, icon: Sobrancelha },
     { id: 6, nome: "Pezinho", preco: 5, icon: Pezinho },
-    { id: 7, nome: "Barba", preco: 10, icon: Barba},
+    { id: 7, nome: "Barba", preco: 10, icon: Barba },
     { id: 8, nome: "Desenho (Freestyle)", preco: 7.5, icon: Desenho },
     { id: 9, nome: "Penteado", preco: 15, icon: Penteado },
     { id: 10, nome: "Penteado com Tintura", preco: 20, icon: PenteadoTintura },
   ];
 
-    const ServicosConfig = {
-      1: { img: LuzesBranca, style: { objectPosition: "center" } },
-      2: { img: LuzesComum,  style: {objectPosition: "center"}},
-      3: { img: Platinado, style: { objectPosition: "center" } },
-      4: { img: Degrade, style: { objectPosition: "center" } },
-      5: { img: Social, style: {objectPosition: "center"}},
-      6: {img: ComboSocial, style: { objectPosition: "center 20%" } },
-      7: {img: ComboDegrade, style: {objectPosition: "center 40%"}},
-      8: { img: Selagem, style: { objectPosition: "center 25%" } },
-    };
+  const ServicosConfig = {
+    1: { img: LuzesBranca, style: { objectPosition: "center" } },
+    2: { img: LuzesComum, style: { objectPosition: "center" } },
+    3: { img: Platinado, style: { objectPosition: "center" } },
+    4: { img: Degrade, style: { objectPosition: "center" } },
+    5: { img: Social, style: { objectPosition: "center" } },
+    6: { img: ComboSocial, style: { objectPosition: "center 20%" } },
+    7: { img: ComboDegrade, style: { objectPosition: "center 40%" } },
+    8: { img: Selagem, style: { objectPosition: "center 25%" } },
+  };
 
   useEffect(() => {
     const buscarDadosIniciais = async () => {
@@ -143,18 +143,18 @@ const FormAgendamento = () => {
     };
 
     if (diaDaSemana === 2 || diaDaSemana === 3) {
-  // Terça e Quarta: até 19:40
-  adicionarHorarios(7, 11, 10, 50);
-  adicionarHorarios(13, 19, 40, 50);
-} else if (diaDaSemana === 4) {
-  // Quinta: até 20:30
-  adicionarHorarios(7, 11, 10, 50);
-  adicionarHorarios(13, 20, 30, 50);
-} else {
-  // Sexta e Sábado: até 21:50
-  adicionarHorarios(7, 11, 10, 50);
-  adicionarHorarios(13, 21, 50, 50);
-}
+      // Terça e Quarta: até 19:40
+      adicionarHorarios(7, 11, 10, 50);
+      adicionarHorarios(13, 19, 40, 50);
+    } else if (diaDaSemana === 4) {
+      // Quinta: até 20:30
+      adicionarHorarios(7, 11, 10, 50);
+      adicionarHorarios(13, 20, 30, 50);
+    } else {
+      // Sexta e Sábado: até 21:50
+      adicionarHorarios(7, 11, 10, 50);
+      adicionarHorarios(13, 21, 50, 50);
+    }
     return horarios;
   };
 
@@ -200,6 +200,11 @@ const FormAgendamento = () => {
   const handleSubmit = async () => {
     if (!formData.data || !formData.horario) {
       setError("❌ Preencha todos os campos obrigatórios!");
+      return;
+    }
+
+    if (!formData.servico && formData.adicionais.length === 0) {
+      setError("❌ Selecione pelo menos um Serviço ou Adicional!");
       return;
     }
 
@@ -423,7 +428,7 @@ const FormAgendamento = () => {
                       onChange={() => handleAdicionaisChange(ad.id)}
                       hidden
                     />
-                    {ad.icon &&(
+                    {ad.icon && (
                       <img
                         src={ad.icon}
                         alt={ad.nome}

@@ -12,10 +12,38 @@
   position: static;
   height: 100vh;
   padding: 75px 25px 0;
+  position: relative;
+}
+
+.logoAgostinho {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.08;
+  z-index: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.logoAgostinho > img {
+  width: 100%;
+  max-width: 800px;
+  min-width: 300px;
+  height: auto;
 }
 
 .fundo-apresentation > h1 {
   font-size: 86px;
+}
+
+.fundo-apresentation h1,
+.fundo-apresentation p,
+.fundo-apresentation .d-flex {
+  position: relative;
+  z-index: 1;
 }
 
 .fundo-apresentation > p {
@@ -133,6 +161,10 @@
     padding: 0.8rem;
   }
 
+  .logoAgostinho > img {
+    width: 80%;
+  }
+
   .fundo-logo-diferenciais,
   .fundo-logo-contato {
     width: 28px;
@@ -210,6 +242,10 @@
     gap: 16px;
   }
 
+  .logoAgostinho > img {
+    width: 80%;
+  }
+
   .container-contato {
     display: flex;
     flex-direction: column;
@@ -239,6 +275,10 @@
 
   .fundo-apresentation > p {
     font-size: 8px;
+  }
+
+  .logoAgostinho > img {
+  width: 70%;
   }
 
   #btnApres1,

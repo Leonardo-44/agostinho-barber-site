@@ -2,6 +2,9 @@ import React from "react";
 import "./Layout.css";
 import { useNavigate } from "react-router-dom";
 
+//LOGO
+import LogoAgostinho from "../../../public/LogoBarbearia.png";
+
 //ASSETS
 import Agenda from "../../assets/agenda.svg";
 import Relogio from "../../assets/relogio.svg";
@@ -23,6 +26,9 @@ const Layout = () => {
         className="fundo-apresentation d-flex jc-center alg-center fd-column"
         id="home"
       >
+        <div className="logoAgostinho">
+          <img  src={LogoAgostinho} alt="LogoAgostinhoBarber" />
+        </div>
         <h1>
           Agostinho <span className="destaque">Barber</span>
         </h1>
