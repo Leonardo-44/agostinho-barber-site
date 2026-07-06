@@ -1,0 +1,471 @@
+/* ================================================================
+   MODALCLIENTESFIXOS.CSS
+   Tema: Dark industrial · Acento âmbar/dourado
+   Importa as variáveis definidas em BarberDashboard.css
+   ================================================================ */
+
+/* ── Overlay ───────────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeIn 0.18s ease;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* ── Caixa do modal ────────────────────────────────────────────── */
+.modal-box {
+  background: #1a1917;
+  border: 1px solid #38352f;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 680px;
+  max-height: 90vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #38352f transparent;
+  animation: slideUp 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modal-box::-webkit-scrollbar { width: 5px; }
+.modal-box::-webkit-scrollbar-thumb { background: #38352f; border-radius: 99px; }
+
+@keyframes slideUp {
+  from { transform: translateY(18px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* ── Header do modal ───────────────────────────────────────────── */
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid #2a2825;
+  position: sticky;
+  top: 0;
+  background: #1a1917;
+  z-index: 2;
+}
+
+.modal-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #c9a84c;
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
+}
+
+.modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: none;
+  border: 1px solid #2a2825;
+  border-radius: 8px;
+  color: #5a554e;
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+.modal-close:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+}
+
+/* ── Body do modal ─────────────────────────────────────────────── */
+.modal-body {
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ── Feedback (sucesso / erro) ─────────────────────────────────── */
+.cf-feedback {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid;
+  animation: fadeIn 0.15s ease;
+}
+
+.cf-feedback-ok {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: #22c55e;
+  color: #22c55e;
+}
+
+.cf-feedback-err {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+/* ── Formulário ────────────────────────────────────────────────── */
+.cf-form {
+  background: #141312;
+  border: 1px solid #2a2825;
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cf-form-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #c9a84c;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0;
+}
+
+.cf-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 520px) {
+  .cf-form-grid { grid-template-columns: 1fr; }
+}
+
+.cf-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.cf-field-full { grid-column: 1 / -1; }
+
+.cf-field label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #5a554e;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.cf-field input,
+.cf-field select {
+  padding: 9px 12px;
+  background: #1a1917;
+  border: 1px solid #2a2825;
+  border-radius: 8px;
+  color: #f5f0e8;
+  font-size: 0.875rem;
+  outline: none;
+  transition: 0.15s ease;
+  width: 100%;
+}
+
+.cf-field input::placeholder { color: #3a3530; }
+
+.cf-field input:focus,
+.cf-field select:focus {
+  border-color: #c9a84c;
+  box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.12);
+}
+
+.cf-field select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235a554e' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
+}
+
+/* Ações do formulário */
+.cf-form-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cf-btn-salvar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  background: #c9a84c;
+  color: #0f0e0d;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: 0.15s ease;
+  letter-spacing: 0.02em;
+}
+
+.cf-btn-salvar:hover:not(:disabled) {
+  filter: brightness(1.1);
+  box-shadow: 0 4px 14px rgba(201, 168, 76, 0.3);
+  transform: translateY(-1px);
+}
+
+.cf-btn-salvar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cf-btn-cancelar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  background: transparent;
+  border: 1px solid #2a2825;
+  color: #9c9489;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+.cf-btn-cancelar:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.06);
+}
+
+/* ── Filtros por dia ───────────────────────────────────────────── */
+.cf-filtros {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.cf-filtro-btn {
+  padding: 5px 13px;
+  border: 1px solid #2a2825;
+  border-radius: 999px;
+  background: transparent;
+  color: #5a554e;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.15s ease;
+  white-space: nowrap;
+}
+
+.cf-filtro-btn:hover:not(.active) {
+  border-color: #c9a84c;
+  color: #c9a84c;
+  background: rgba(201, 168, 76, 0.08);
+}
+
+.cf-filtro-btn.active {
+  background: #c9a84c;
+  color: #0f0e0d;
+  border-color: #c9a84c;
+  font-weight: 700;
+}
+
+/* ── Estado vazio ──────────────────────────────────────────────── */
+.cf-vazio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 2.5rem 1rem;
+  color: #3a3530;
+  text-align: center;
+}
+
+.cf-vazio p { font-size: 0.875rem; margin: 0; color: #5a554e; }
+
+/* ── Grid de cards fixos ───────────────────────────────────────── */
+.cf-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+@media (min-width: 460px) { .cf-grid { grid-template-columns: 1fr 1fr; } }
+
+/* ── Card individual ───────────────────────────────────────────── */
+.cf-card {
+  background: #141312;
+  border: 1px solid #2a2825;
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: 0.15s ease;
+}
+
+.cf-card:hover {
+  border-color: #38352f;
+  background: #1a1917;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Card sendo editado — destaque dourado */
+.cf-card-editing {
+  border-color: #c9a84c !important;
+  box-shadow: 0 0 0 2px rgba(201, 168, 76, 0.15);
+}
+
+/* Topo do card (avatar + info + ações) */
+.cf-card-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cf-avatar {
+  width: 38px;
+  height: 38px;
+  background: rgba(201, 168, 76, 0.15);
+  border: 1px solid rgba(201, 168, 76, 0.3);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: #c9a84c;
+  flex-shrink: 0;
+}
+
+.cf-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cf-card-nome {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #f5f0e8;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cf-card-servico {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: #5a554e;
+  margin: 3px 0 0;
+}
+
+/* Ações do card (editar / remover) */
+.cf-card-acoes {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.cf-btn-edit,
+.cf-btn-del {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background: none;
+  border: 1px solid #2a2825;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+.cf-btn-edit { color: #5a554e; }
+.cf-btn-edit:hover {
+  border-color: #c9a84c;
+  color: #c9a84c;
+  background: rgba(201, 168, 76, 0.08);
+}
+
+.cf-btn-del { color: #5a554e; }
+.cf-btn-del:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+}
+
+/* Tags inferiores do card (dia / hora / whatsapp) */
+.cf-card-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.cf-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border: 1px solid;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.cf-tag-dia {
+  background: rgba(201, 168, 76, 0.08);
+  border-color: rgba(201, 168, 76, 0.25);
+  color: #c9a84c;
+}
+
+.cf-tag-hora {
+  background: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.25);
+  color: #3b82f6;
+}
+
+.cf-tag-wa {
+  background: rgba(34, 197, 94, 0.08);
+  border-color: rgba(34, 197, 94, 0.25);
+  color: #22c55e;
+  transition: 0.15s ease;
+  cursor: pointer;
+}
+
+.cf-tag-wa:hover {
+  background: rgba(34, 197, 94, 0.16);
+}
+
+/* Observação do card fixo */
+.cf-obs {
+  font-size: 0.75rem;
+  color: #5a554e;
+  margin: 0;
+  padding: 6px 10px;
+  background: rgba(201, 168, 76, 0.05);
+  border-left: 2px solid rgba(201, 168, 76, 0.3);
+  border-radius: 4px;
+  font-style: italic;
+}

@@ -34,6 +34,15 @@ import LuzesComum from "../../icons/Servicos/LuzesComum.jpeg";
 import ComboDegrade from "../../icons/Servicos/ComboDegrade.jpeg";
 import Social from "../../icons/Servicos/Social.jpeg";
 
+const getHoraAtualEmMinutos = () => {
+  const agora = new Date();
+  return agora.getHours() * 60 + agora.getMinutes();
+};
+
+const toLocalDateString = (date) => {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+};
+
 const FormAgendamento = () => {
   const navigate = useNavigate();
 
@@ -49,8 +58,12 @@ const FormAgendamento = () => {
   const [error, setError] = useState("");
   const [servicos, setServicos] = useState([]);
   const [agendamentosOcupados, setAgendamentosOcupados] = useState([]);
+  // ✅ NOVO: horários travados pelos clientes fixos naquele dia
+  const [horariosFixosBloqueados, setHorariosFixosBloqueados] = useState([]);
   const [loadingServicos, setLoadingServicos] = useState(true);
   const [usuarioNome, setUsuarioNome] = useState("");
+  // ✅ NOVO: "tick" só para forçar recálculo de horários passados a cada 30s
+  const [tick, setTick] = useState(0);
 
   const adicionais = [
     { id: 1, nome: "Matização", preco: 8, icon: Matizacao },
@@ -109,11 +122,31 @@ const FormAgendamento = () => {
     buscarDadosIniciais();
   }, []);
 
-  const buscarAgendamentosOcupados = async (dataSelecionada) => {
+  // ✅ Timer para "sumir" horário passado sozinho, sem precisar de interação
+  useEffect(() => {
+    const isHoje = formData.data === toLocalDateString(new Date());
+    if (!isHoje) return;
+
+    const intervalo = setInterval(() => {
+      setTick((t) => t + 1);
+    }, 30000); // a cada 30s
+
+    return () => clearInterval(intervalo);
+  }, [formData.data]);
+
+  // ✅ Busca agendamentos ocupados + horários bloqueados por clientes fixos, juntos
+  const buscarDadosDoDia = async (dataSelecionada) => {
     try {
-      const resp = await api.fetchHorariosOcupados(dataSelecionada);
-      if (resp.success) {
-        setAgendamentosOcupados(resp.agendamentos || []);
+      const [respOcupados, respFixos] = await Promise.all([
+        api.fetchHorariosOcupados(dataSelecionada),
+        api.fetchHorariosBloqueadosFixos(dataSelecionada),
+      ]);
+
+      if (respOcupados.success) {
+        setAgendamentosOcupados(respOcupados.agendamentos || []);
+      }
+      if (respFixos.success) {
+        setHorariosFixosBloqueados(respFixos.horarios || []);
       }
     } catch (err) {
       console.error("Erro ao buscar horários:", err);
@@ -123,8 +156,10 @@ const FormAgendamento = () => {
   const getHorariosDisponiveis = (data) => {
     if (!data) return [];
     const diaDaSemana = new Date(data.replace(/-/g, "/")).getDay();
-
     if (diaDaSemana === 0 || diaDaSemana === 1) return [];
+
+    const isHoje = data === toLocalDateString(new Date());
+    const agoraEmMinutos = getHoraAtualEmMinutos();
 
     let horarios = [];
     const adicionarHorarios = (inicioHora, fimHora, fimMinuto, intervalo) => {
@@ -134,24 +169,28 @@ const FormAgendamento = () => {
         const h = String(Math.floor(totalMinutos / 60)).padStart(2, "0");
         const m = String(totalMinutos % 60).padStart(2, "0");
         const horario = `${h}:${m}`;
-        const ocupado = agendamentosOcupados.some((a) =>
+
+        const ocupadoPorAgendamento = agendamentosOcupados.some((a) =>
           a.horario_agendamento?.startsWith(horario),
         );
-        if (!ocupado) horarios.push(horario);
+        // ✅ bloqueia também os horários fixos dos clientes fixos
+        const ocupadoPorClienteFixo = horariosFixosBloqueados.includes(horario);
+        const ocupado = ocupadoPorAgendamento || ocupadoPorClienteFixo;
+
+        const jaPassou = isHoje && totalMinutos <= agoraEmMinutos;
+
+        if (!ocupado && !jaPassou) horarios.push(horario);
         totalMinutos += intervalo;
       }
     };
 
     if (diaDaSemana === 2 || diaDaSemana === 3) {
-      // Terça e Quarta: até 19:40
       adicionarHorarios(7, 11, 10, 50);
       adicionarHorarios(13, 19, 40, 50);
     } else if (diaDaSemana === 4) {
-      // Quinta: até 20:30
       adicionarHorarios(7, 11, 10, 50);
       adicionarHorarios(13, 20, 30, 50);
     } else {
-      // Sexta e Sábado: até 21:50
       adicionarHorarios(7, 11, 10, 50);
       adicionarHorarios(13, 21, 50, 50);
     }
@@ -162,7 +201,7 @@ const FormAgendamento = () => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (name === "data") {
-      buscarAgendamentosOcupados(value);
+      buscarDadosDoDia(value);
       setFormData((prev) => ({ ...prev, data: value, horario: "" }));
     }
   };
@@ -176,7 +215,6 @@ const FormAgendamento = () => {
     }));
   };
 
-  // ✅ Seleciona serviço pelo card
   const handleServicoSelect = (id) => {
     setFormData((prev) => ({
       ...prev,
@@ -259,6 +297,8 @@ const FormAgendamento = () => {
     ? new Date(formData.data.replace(/-/g, "/")).getDay()
     : null;
   const diaFechado = diaDaSemana === 0 || diaDaSemana === 1;
+  // eslint-disable-next-line no-unused-vars
+  const _forcaRecalculo = tick; // mantém a dependência viva para o linter
   const horariosDisponiveis = getHorariosDisponiveis(formData.data);
 
   return (
@@ -351,7 +391,7 @@ const FormAgendamento = () => {
               </select>
             </div>
 
-            {/* SERVIÇO — Grid de Cards com Imagem */}
+            {/* SERVIÇO */}
             <div className="form-group">
               <label className="form-label">
                 <Scissors size={18} />

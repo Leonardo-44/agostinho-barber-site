@@ -11,7 +11,6 @@ import {
   Phone,
   User,
 } from "lucide-react";
-// ✅ Importação do serviço de API
 import api from "../../services/api";
 
 //ICONS
@@ -36,9 +35,13 @@ import LuzesComum from "../../icons/Servicos/LuzesComum.jpeg";
 import ComboDegrade from "../../icons/Servicos/ComboDegrade.jpeg";
 import Social from "../../icons/Servicos/Social.jpeg";
 
-// ✅ Helper de data SEM conversão de timezone
 const toLocalDateString = (date) => {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+};
+
+const getHoraAtualEmMinutos = () => {
+  const agora = new Date();
+  return agora.getHours() * 60 + agora.getMinutes();
 };
 
 const FormBarberDashboard = () => {
@@ -58,8 +61,12 @@ const FormBarberDashboard = () => {
   const [error, setError] = useState("");
   const [servicos, setServicos] = useState([]);
   const [agendamentosOcupados, setAgendamentosOcupados] = useState([]);
+  // ✅ NOVO
+  const [horariosFixosBloqueados, setHorariosFixosBloqueados] = useState([]);
   const [loadingServicos, setLoadingServicos] = useState(true);
   const [diasExcecao, setDiasExcecao] = useState([]);
+  // ✅ NOVO: força recálculo de horário passado
+  const [tick, setTick] = useState(0);
 
   const adicionais = [
     { id: 1, nome: "Matização", preco: 8, icon: Matizacao },
@@ -85,7 +92,6 @@ const FormBarberDashboard = () => {
     8: { img: Selagem, style: { objectPosition: "center 25%" } },
   };
 
-  // ✅ Buscar serviços
   useEffect(() => {
     const buscarDados = async () => {
       try {
@@ -106,24 +112,45 @@ const FormBarberDashboard = () => {
     buscarDados();
   }, []);
 
-  // ✅ Buscar horários ocupados
-  const buscarAgendamentosOcupados = async (data) => {
+  // ✅ Timer para sumir horário passado sozinho
+  useEffect(() => {
+    const isHoje = formData.data === toLocalDateString(new Date());
+    if (!isHoje) return;
+
+    const intervalo = setInterval(() => {
+      setTick((t) => t + 1);
+    }, 30000);
+
+    return () => clearInterval(intervalo);
+  }, [formData.data]);
+
+  // ✅ Busca agendamentos ocupados + horários bloqueados por clientes fixos, juntos
+  const buscarDadosDoDia = async (data) => {
     try {
-      const data_resp = await api.fetchHorariosOcupados(data);
-      if (data_resp.success) {
-        setAgendamentosOcupados(data_resp.agendamentos || []);
+      const [respOcupados, respFixos] = await Promise.all([
+        api.fetchHorariosOcupados(data),
+        api.fetchHorariosBloqueadosFixos(data),
+      ]);
+
+      if (respOcupados.success) {
+        setAgendamentosOcupados(respOcupados.agendamentos || []);
+      }
+      if (respFixos.success) {
+        setHorariosFixosBloqueados(respFixos.horarios || []);
       }
     } catch (err) {
       console.error("Erro ao buscar horários:", err);
     }
   };
 
-  // ✅ Lógica de horários
   const getHorariosDisponiveis = (data) => {
     if (!data) return [];
     const diaDaSemana = new Date(data.replace(/-/g, "/")).getDay();
     const ehExcecao = diasExcecao.includes(data);
     if ((diaDaSemana === 0 || diaDaSemana === 1) && !ehExcecao) return [];
+
+    const isHoje = data === toLocalDateString(new Date());
+    const agoraEmMinutos = getHoraAtualEmMinutos();
 
     let horarios = [];
     const gerar = (inicio, fimH, fimM, intervalo) => {
@@ -133,10 +160,17 @@ const FormBarberDashboard = () => {
         const h = String(Math.floor(totalMinutos / 60)).padStart(2, "0");
         const m = String(totalMinutos % 60).padStart(2, "0");
         const horario = `${h}:${m}`;
-        const ocupado = agendamentosOcupados.some((a) =>
+
+        const ocupadoPorAgendamento = agendamentosOcupados.some((a) =>
           a.horario_agendamento?.startsWith(horario),
         );
-        if (!ocupado) horarios.push(horario);
+        // ✅ bloqueia também os horários fixos dos clientes fixos
+        const ocupadoPorClienteFixo = horariosFixosBloqueados.includes(horario);
+        const ocupado = ocupadoPorAgendamento || ocupadoPorClienteFixo;
+
+        const jaPassou = isHoje && totalMinutos <= agoraEmMinutos;
+
+        if (!ocupado && !jaPassou) horarios.push(horario);
         totalMinutos += intervalo;
       }
     };
@@ -179,7 +213,7 @@ const FormBarberDashboard = () => {
     }
     setError("");
     if (name === "data") {
-      buscarAgendamentosOcupados(value);
+      buscarDadosDoDia(value);
       setFormData((prev) => ({ ...prev, horario: "" }));
     }
   };
@@ -213,7 +247,6 @@ const FormBarberDashboard = () => {
     }));
   };
 
-  // ✅ Enviar agendamento manual
   const handleSubmit = async () => {
     if (
       !formData.nome ||
@@ -279,13 +312,14 @@ const FormBarberDashboard = () => {
     (s) => s.id === parseInt(formData.servico),
   );
 
-  // ✅ Datas sem timezone — usa horário local
   const hoje = toLocalDateString(new Date());
   const diaMax = new Date();
   diaMax.setDate(diaMax.getDate() + 365);
   const diaMaxString = toLocalDateString(diaMax);
 
   const diaFechado = getDiaFechado(formData.data);
+  // eslint-disable-next-line no-unused-vars
+  const _forcaRecalculo = tick;
   const horariosDisponiveis = getHorariosDisponiveis(formData.data);
   const total = calcularTotal();
 
@@ -431,7 +465,7 @@ const FormBarberDashboard = () => {
               </select>
             </div>
 
-            {/* SERVIÇO — Grid de Cards com Imagem */}
+            {/* SERVIÇO */}
             <div className="form-group">
               <label className="form-label">
                 <Scissors size={18} />
@@ -542,7 +576,6 @@ const FormBarberDashboard = () => {
                 <div className="resumo-item">
                   <span className="resumo-label">Data:</span>
                   <span className="resumo-value">
-                    {/* ✅ Sem UTC — split manual */}
                     {formData.data.split("-").reverse().join("/")}
                   </span>
                 </div>
