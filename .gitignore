@@ -24,10 +24,7 @@ dist-ssr
 
 .vercel
 .env*.local
-.services
 
 # Variáveis de ambiente
 .env
 
-# Pasta services
-src/services/
