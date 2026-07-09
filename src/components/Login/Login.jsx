@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginClient } from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
 import '../Login.css'; 
 
 const Login = () => {
@@ -14,76 +15,76 @@ const Login = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-    
-    if (!email || !password) {
-      setError("❌ Por favor, preencha todos os campos.");
-      return;
+  const { login } = useAuth();
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError("");
+  setSuccess("");
+
+  if (!email || !password) {
+    setError("❌ Por favor, preencha todos os campos.");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    console.log('📝 [FORM] Iniciando login para:', email);
+
+    const response = await loginClient({
+      email: email,
+      senha: password
+    });
+
+    console.log('✅ [LOGIN] Resposta recebida:', response);
+
+    if (!response.success) {
+      throw { error: response.error || 'Erro ao fazer login' };
     }
 
-    setLoading(true);
+    // ✅ Usa o login() do AuthContext — ele já salva token + user no localStorage
+    if (response.token && response.user) {
+      login(response.user, response.token);
 
-    try {
-      console.log('📝 [FORM] Iniciando login para:', email);
-      
-      const response = await loginClient({ 
-        email: email,
-        senha: password
-      });
-      
-      console.log('✅ [LOGIN] Resposta recebida:', response);
-      
-      if (!response.success) {
-        throw { error: response.error || 'Erro ao fazer login' };
-      }
-
-      if (response.token) {
-        localStorage.setItem('authToken', response.token);
-        console.log('💾 Token salvo no localStorage');
-      }
-      
-      if (response.user) {
-        localStorage.setItem('userData', JSON.stringify(response.user));
-        localStorage.setItem('userEmail', response.user.email);
-        localStorage.setItem('userName', response.user.nome);
-        localStorage.setItem('userRole', response.user.role);
-        console.log('💾 Dados do usuário salvos');
-      }
-      
-      const nomeUsuario = response.user?.nome || 'usuário';
-      setSuccess(`✅ Bem-vindo de volta, ${nomeUsuario}!`);
-      
-      setTimeout(() => {
-        navigate('/');
-      }, 1500);
-      
-    } catch (err) {
-      console.error("❌ Erro de Login:", err);
-      
-      let errorMessage = 'Erro ao fazer login. Verifique suas credenciais.';
-      
-      if (err?.error) {
-        errorMessage = err.error;
-      } else if (err?.message) {
-        errorMessage = err.message;
-      }
-      
-      if (err?.status === 401) {
-        errorMessage = 'E-mail ou senha incorretos.';
-      } else if (err?.status === 404) {
-        errorMessage = 'Usuário não encontrado. Você já se cadastrou?';
-      } else if (err?.status === 500) {
-        errorMessage = 'Erro no servidor. Tente novamente em instantes.';
-      }
-      
-      setError(`❌ ${errorMessage}`);
-    } finally {
-      setLoading(false);
+      // extras que não fazem parte do AuthContext mas ainda podem ser usados em outros lugares
+      localStorage.setItem('userEmail', response.user.email);
+      localStorage.setItem('userName', response.user.nome);
+      localStorage.setItem('userRole', response.user.role);
+      console.log('💾 Sessão salva via AuthContext');
     }
-  };
+
+    const nomeUsuario = response.user?.nome || 'usuário';
+    setSuccess(`✅ Bem-vindo de volta, ${nomeUsuario}!`);
+
+    setTimeout(() => {
+      navigate('/');
+    }, 1500);
+
+  } catch (err) {
+    console.error("❌ Erro de Login:", err);
+
+    let errorMessage = 'Erro ao fazer login. Verifique suas credenciais.';
+
+    if (err?.error) {
+      errorMessage = err.error;
+    } else if (err?.message) {
+      errorMessage = err.message;
+    }
+
+    if (err?.status === 401) {
+      errorMessage = 'E-mail ou senha incorretos.';
+    } else if (err?.status === 404) {
+      errorMessage = 'Usuário não encontrado. Você já se cadastrou?';
+    } else if (err?.status === 500) {
+      errorMessage = 'Erro no servidor. Tente novamente em instantes.';
+    }
+
+    setError(`❌ ${errorMessage}`);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="login-container">

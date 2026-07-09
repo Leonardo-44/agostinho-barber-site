@@ -318,7 +318,6 @@ const FormBarberDashboard = () => {
   const diaMaxString = toLocalDateString(diaMax);
 
   const diaFechado = getDiaFechado(formData.data);
-  // eslint-disable-next-line no-unused-vars
   const _forcaRecalculo = tick;
   const horariosDisponiveis = getHorariosDisponiveis(formData.data);
   const total = calcularTotal();

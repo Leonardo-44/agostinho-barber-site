@@ -385,21 +385,14 @@ const BarberDashboard = () => {
     if (!matchDate) return false;
 
     const s = app.status?.toLowerCase() || "";
+    const isCompleted = s === "completed" || s === "concluído";
+    const isCancelled = s === "cancelled" || s === "cancelado";
+    const isPending = !isCompleted && !isCancelled;
 
-    // Se não está pendente, sempre mostra para permitir reverter
-    if (
-      s === "completed" ||
-      s === "concluído" ||
-      s === "cancelled" ||
-      s === "cancelado"
-    ) {
-      return true;
-    }
-
-    // Se está pendente, respeita o filtro
-    if (filter === "completed") return false;
-    return true; // "pending" e "all"
-  });
+    if (filter === "pending") return isPending;
+    if (filter === "completed") return isCompleted;
+    return true; // "all" — aqui sim mostra tudo, incluindo cancelados
+});
 
   const diaSemanaSelected = String(getDiaSemana(selectedDate));
 

@@ -297,7 +297,6 @@ const FormAgendamento = () => {
     ? new Date(formData.data.replace(/-/g, "/")).getDay()
     : null;
   const diaFechado = diaDaSemana === 0 || diaDaSemana === 1;
-  // eslint-disable-next-line no-unused-vars
   const _forcaRecalculo = tick; // mantém a dependência viva para o linter
   const horariosDisponiveis = getHorariosDisponiveis(formData.data);
 
